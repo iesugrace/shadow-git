@@ -1,0 +1,55 @@
+At least two ways to install this tool:
+
+First:
+    1. Copy the whole directory somewhere you can access
+        # cp -r shadow-git /usr/local/shadow-git
+
+    2. Add /usr/local/shadow-git to your PATH
+        # echo "PATH=/usr/local/shadow-git:$PATH" >> ~/.bashrc
+
+Second:
+    Copy all shadow-git-* files and the lib.py to your PATH.
+
+        # cp shadow-git-* lib.py /usr/local/bin
+
+
+
+How to use?
+
+    1. first you need a git repository, or create one
+        # git init
+
+    2. ensure you had set your identity
+        # git config user.name
+        # git config user.email
+
+    3. in the git repository directory
+        # git shadow-init
+
+    4. when you want to push to the server, run a command like the following,
+       it will create a new branch named 'cipher-master' in the local repo,
+       and push this 'cipher-master' to the remote.
+        # git shadow-push origin master
+
+    5. fetch from the server. This command will fetch data from the remote and
+       create a temporary branch named 'plain-origin-master' in the local repo
+       for laster merge.
+        # git shadow-fetch origin master
+
+    6. merge the data just fetched from the remote. In caese of any conflict,
+       it will stop and inform you, just solve any conflict as usual, and run
+       the command again. The temporary branch plain-origin-master will be
+       deleted after successfully merged.
+        # git shadow-merge plain-origin-master
+
+    7. manage the public keys of the team
+        # git shadow-pubkey list
+        # git shadow-pubkey add
+        # git shadow-pubkey remove <keyword>
+
+    8. when a new team member comes in.
+        8.1 do this on an old member's computer:
+            # git shadow-symkey update
+            # git shadow-symkey push origin
+        8.2 do this on the new member's computer
+            # git shadow-clone ...

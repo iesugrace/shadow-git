@@ -1,0 +1,7 @@
+A tool to encrypt the git objects before pushing them to the remote.
+If you want to store the project on the public git server, but don't
+want to share it with the public, this tool can help.
+
+See LICENSE for license agreement.
+
+See INSTALL for installation instructions.

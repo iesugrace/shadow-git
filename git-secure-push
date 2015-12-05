@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+# Author: Joshua Chen
+# Date: 2015-12-05
+# Location: Shenzhen
+# Desc: secure data before pushing it to the remote,
+# it pushes one branch at a time.
+
+import sys
+
+class Pusher():
+    """ It find out all commits created since the last secure-push in the given
+    branch, for each and every commit, do this: tar-archive all objects of one
+    single commit, encrypt it, save it to a blob object, create a tree for it,
+    then a commit, the file name, author info are all faked. All encrypted
+    commits are in a totally separated branch named like this: cipher-master.
+    After transforming all plaintext commits into ciphertext, call the git-push
+    to do the actual push.
+    """
+
+    def __init__(self, remote, branch):
+        self.remote = remote
+        self.branch = branch
+        last_pushed = self.get_last_pushed(branch)
+        self.last_plain_commit  = last_pushed[0]
+        self.last_cipher_commit = last_pushed[1]
+        self.transform()
+        self.push()
+
+    def transform(self):
+        """ Transform plaintext commits into ciphertext commits, including
+        all objects directly or indirectly referenced by the commits
+        """
+
+    def push(self):
+        """ Push the transformed (encrypted) branch to the remot, update
+        the last-pushed record mapping for the plain and cipher on success,
+        reset the cipher branch back to the last pushed on failure.
+        """
+
+if __name__ == '__main__':
+    remote, branch = sys.argv[1:]
+    Pusher(remote, branch)
