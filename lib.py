@@ -59,7 +59,7 @@ def run_for_output(cmd):
 
 def reachable(start_commit, end_commit):
     """ Check if start_commit is reachable from the end_commit """
-    cmd = 'git merge-base %s..%s' % (start_commit, end_commit)
+    cmd = 'git merge-base %s %s' % (start_commit, end_commit)
     stat, output = run_for_output(cmd)
     if stat:
         base = output[0]
