@@ -67,4 +67,13 @@ class Pusher():
 
 if __name__ == '__main__':
     remote, branch = sys.argv[1:]
-    Pusher(remote, branch)
+    if not lib.find_git_dir():
+        print('Not a git repository', file=sys.stderr)
+        exit(1)
+    try:
+        Pusher(remote, branch)
+    except Exception as e:
+        print(str(e))
+        exit(1)
+    else:
+        exit(0)
