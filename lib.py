@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 def find_git_dir():
     """ Return the absolute path of the .git directory """
@@ -43,3 +44,48 @@ def get_last_pushed(branch):
         pass
 
     return result
+
+
+def run_for_output(cmd):
+    """ Run the cmd, return the stdout as a list of lines
+    as well as the stat of the cmd (True or False)
+    """
+    stat, output = subprocess.getstatusoutput(cmd)
+    if stat == 0:
+        return True, output.split('\n')
+    else:
+        return False, []
+
+
+def reachable(start_commit, end_commit):
+    """ Check if start_commit is reachable from the end_commit """
+    cmd = 'git merge-base %s..%s' % (start_commit, end_commit)
+    stat, output = run_for_output(cmd)
+    if stat:
+        base = output[0]
+        cmd = 'git rev-parse --verify %s' % start_commit
+        stat, output = run_for_output(cmd)
+        if stat and output[0] == base:
+            return True
+    return False
+
+
+def find_all_commits(start_commit, end_commit):
+    """ Return a list of commits' SHA1s that based on the
+    start_commit (excluded) up to the end_commit (included),
+    the start_commit shall be reachable from the end_commit
+    unless start_commit is 40 zeros, or exception will raise.
+    On errer, return an empty list.
+    """
+    empty = '0' * 40
+    if start_commit == empty:
+        rev_range = end_commit
+    else:
+        if not reachable(start_commit, end_commit):
+            msg = '%s is not reachable from %s' % (start_commit, end_commit)
+            raise Exception(msg)
+        else:
+            rev_range = '%s..%s' % (start_commit, end_commit)
+    cmd = 'git log --pretty=format:"%h" ' + rev_range
+    stat, commits = run_for_output(cmd)
+    return commits
