@@ -20,8 +20,8 @@ def find_git_dir():
 
 
 def get_last_pushed(branch):
-    """ Return the a tuple of positions of the branch and
-    its cipher counterpart when they had been pushed recently.
+    """ Return a tuple of positions of the branch and its
+    cipher counterpart when they had been pushed recently.
     If they had never been pushed, return 40 zeros.
 
     Format of the pushed record file:
