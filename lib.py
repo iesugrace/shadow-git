@@ -89,3 +89,23 @@ def find_all_commits(start_commit, end_commit):
     cmd = 'git log --pretty=format:"%h" ' + rev_range
     stat, commits = run_for_output(cmd)
     return commits
+
+
+def collect_object_ids(commit):
+    """ Collect IDs of all new objects of a given commit,
+    from the commit down to the blob object.
+    """
+    ids = set()
+    ids.add(commit)                     # add the commit itself
+    top_tree = tree_of_commit(commit)
+    affected_files = files_of_commit(commit)
+    for path in affected_files:
+        next  = top_tree
+        names = path.split(os.sep)
+        for name in names:
+            ids.add(next)               # the 'next' is the tree in the path
+            next = object_of_file(next, name)
+            if not next: break          # tree will be empty for file deletion
+        if next: ids.add(next)          # this is the blob of the file
+    ids.add(top_tree)                   # empty commit contains no files, so the
+    return ids                          # top_tree not been added yet.
