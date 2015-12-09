@@ -90,6 +90,16 @@ def find_all_commits(start_commit, end_commit):
     stat, commits = run_for_output(cmd)
     return commits
 
+def encrypt_one_commit(commit):
+    """ Transform all objects of the given commit to an encrypted format.
+        -- Collect object IDs,
+        -- Copy out objects and save them to files like the
+           structure of .git/objects, that is, two chars for
+           directory name, 38 chars for file name.
+        -- Archive, encrypt, and create a new blob in a pipe
+        -- Remove all temporary files and directories
+        -- Return the new encrypted blob's ID
+    """
 
 def collect_object_ids(commit):
     """ Collect IDs of all new objects of a given commit,
