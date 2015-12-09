@@ -38,9 +38,7 @@ class Pusher():
         if not commits: return
         parent  = self.last_pushed_cipher
         for commit in commits:
-            archive     = lib.archiver(commit)
-            ciphertext  = lib.encrypter(archive)
-            blob        = lib.create_blob(ciphertext)
+            blob        = lib.encrypt_one_commit(commit)
             tree        = lib.create_tree(blob)
             new_commit  = lib.create_commit(tree, parent)
             parent      = new_commit
