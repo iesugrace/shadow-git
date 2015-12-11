@@ -1,6 +1,6 @@
-import os
-import subprocess
+import os, sys
 import hashlib, zlib
+from subprocess import Popen, PIPE, getstatusoutput
 
 def find_git_dir():
     """ Return the absolute path of the .git directory """
@@ -52,7 +52,7 @@ def get_status_text_output(cmd):
     as well as the stat of the cmd (True or False), content
     of the stdout will be decoded.
     """
-    stat, output = subprocess.getstatusoutput(cmd)
+    stat, output = getstatusoutput(cmd)
     if stat == 0:
         return True, output.split('\n')
     else:
@@ -63,7 +63,7 @@ def get_status_byte_output(cmd):
     """ Run the cmd, return the stdout as a bytes, as well as
     the stat of the cmd (True or False), cmd is a list.
     """
-    p       = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    p       = Popen(cmd, stdout=PIPE)
     output  = p.communicate()[0]
     stat    = p.wait()
     if stat == 0:
@@ -173,41 +173,66 @@ def copy_object(id, file):
     return stat
 
 
+def copy_out_objects(commit, topdir=None):
+    """ Copy out objects created by the given commit, and save
+    them to files like the structure of .git/objects, that is,
+    two chars for directory name, 38 chars for file name.
+    """
+    topdir = topdir if topdir else commit
+    os.mkdir(topdir)
+    ids = collect_object_ids(commit)
+    for id in ids:
+        dir  = os.path.join(topdir, id[:2])
+        file = os.path.join(dir, id[2:])
+        os.makedirs(dir, exist_ok=True)
+        copy_object(id, file)
+
+
+def tar_to_stdout(path, stdout):
+    """ Tar archive the given path, write to stdout
+    """
+    p = Popen(['tar', '-cf', '-', path], stdout=stdout)
+    return p
+
+
+def encrypt_pipe(stdin, stdout, key):
+    """ Encrypt the data from the stdin, write it to stdout
+    """
+    infd, outfd = os.pipe()
+    p = Popen(['gpg', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
+                stdin=stdin, stdout=stdout, pass_fds=[infd])
+    f = os.fdopen(outfd, 'w')
+    f.write(key)
+    f.close()
+    return p
+
+
+def pipe_to_object(stdin, stdout):
+    """ Read data from stdin and save it to a Git hash-object.
+    """
+    p = Popen(['git', 'hash-object', '-w', '--stdin'],
+                stdin=stdin, stdout=stdout)
+    return p
+
+
+def cleanup(path):
+    """ Remove the path, including all files in it if it's a directory.
+    """
+    getstatusoutput('rm -rf %s' % path)
+
+
 def encrypt_one_commit(commit, key):
     """ Transform all objects of the given commit to an encrypted format.
-        -- Collect object IDs,
-        -- Copy out objects and save them to files like the
-           structure of .git/objects, that is, two chars for
-           directory name, 38 chars for file name.
+        -- Copy out all objects of a commit
         -- Archive, encrypt, and create a new blob in a pipe
         -- Remove all temporary files and directories
         -- Return the new encrypted blob's ID
     """
-    ids = collect_object_ids(commit)
-
-    # copy out all objects and save them to files
-    os.mkdir(commit)
-    for id in ids:
-        dir  = os.path.join(commit, id[:2])
-        file = os.path.join(dir, id[2:])
-        os.mkdir(dir)
-        os.makedirs(dir, exist_ok=True)
-        copy_object(id, file)
-
-    # archive, encrypt, save into a new blob
-    from subprocess import Popen, PIPE, getstatusoutput
-    infd, outfd = os.pipe()
-    p1 = Popen(['tar', '-cf', '-', commit], stdout=PIPE)
-    p2 = Popen(['gpg', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
-                stdin=p1.stdout, stdout=PIPE, pass_fds=[infd])
-    f = os.fdopen(outfd, 'w')
-    f.write(key)
-    f.close()
-    p3 = Popen(['git', 'hash-object', '-w', '--stdin'],
-                stdin=p2.stdout, stdout=PIPE)
-    new_blob_id = p3.communicate()[0].decode()
-
-    # clean
-    getstatusoutput('rm -rf %s' % commit)
-
-    return new_blob_id
+    dir = commit
+    copy_out_objects(commit, dir)
+    p1 = tar_to_stdout(path=dir, stdout=PIPE)
+    p2 = encrypt_pipe(stdin=p1.stdout, stdout=PIPE, key=key)
+    p3 = pipe_to_object(stdin=p2.stdout, stdout=PIPE)
+    id = p3.communicate()[0].decode()
+    cleanup(dir)
+    return id
