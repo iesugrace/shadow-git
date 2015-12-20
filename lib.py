@@ -221,6 +221,16 @@ def cleanup(path):
     getstatusoutput('rm -rf %s' % path)
 
 
+def encrypt_path(path, key):
+    """ Archive the path, encrypt it, and create a new blob for it,
+    return the new encrypted blob's ID
+    """
+    p1 = tar_to_stdout(path=path, stdout=PIPE)
+    p2 = encrypt_pipe(stdin=p1.stdout, stdout=PIPE, key=key)
+    p3 = pipe_to_object(stdin=p2.stdout, stdout=PIPE)
+    id = p3.communicate()[0].decode()
+    return id
+
 def encrypt_one_commit(commit, key):
     """ Transform all objects of the given commit to an encrypted format.
         -- Copy out all objects of a commit
