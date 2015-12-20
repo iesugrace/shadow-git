@@ -3,6 +3,7 @@ import hashlib, zlib
 import time
 from subprocess import Popen, PIPE, getstatusoutput
 
+class ShellCmdErrorException(Exception): pass
 empty_object_id = '0' * 40
 
 def find_git_dir():
@@ -245,6 +246,56 @@ def encrypt_one_commit(commit, key):
     id = encrypt_path(dir, key)
     cleanup(dir)
     return id
+
+def create_tree(blob_id, file_name, base):
+    """ Create a tree object with the provided blob id and file name. Argument
+    'base' is the base commit on which we are going to create a new tree object,
+    if it is all zero (40 zeros), we will start from empty, if it is not all zero,
+    we will base on it and add the blob and file info onto it. Return the new
+    tree's object id. When we start from empty, we first backup the possibly
+    existing index file and create our own, then restore it backup when finished;
+    if we don't start from empty, we checkout to that base commit first, and go
+    back to the original position when finished.
+    """
+    GIT_INDEX_FILE = ".git/index"
+    orig_tree_data = None
+    orig_pos       = None
+    if base == empty_object_id:
+        # backup the existing index
+        if os.path.exists(GIT_INDEX_FILE):
+            orig_tree_data = open(GIT_INDEX_FILE, 'rb').read()
+            os.unlink(GIT_INDEX_FILE)
+    else:
+        # checkout to the base commit, but log the current position first
+        cmd = 'git branch'
+        stat, output = get_status_text_output(cmd)
+        if not stat: raise ShellCmdErrorException(cmd)
+        orig_pos = [x for x in output if x.startswith('*')][0]
+        if 'detached' in orig_pos:
+            orig_pos = orig_pos.split()[-1][:-1]
+        cmd = 'git checkout %s' % base
+        stat, output = get_status_text_output(cmd)
+        if not stat: raise ShellCmdErrorException(cmd)
+
+    cmd = 'git update-index --add --cacheinfo 100644 %s %s' % (blob_id, file_name)
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException(cmd)
+    cmd = 'git write-tree'
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException(cmd)
+    tree_id = output[0]
+
+    # restore the index to the state before our work
+    if orig_tree_data is not None:
+        i = open(GIT_INDEX_FILE, 'wb')
+        i.write(orig_tree_data)
+        i.close()
+    else:
+        cmd = 'git checkout -f %s' % orig_pos
+        stat, output = get_status_text_output(cmd)
+        if not stat: raise ShellCmdErrorException(cmd)
+
+    return tree_id
 
 def dense_time_str(second=None):
     """ Return a time string from a second, no separator
