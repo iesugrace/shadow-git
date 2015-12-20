@@ -101,7 +101,7 @@ def find_all_commits(start_commit, end_commit):
             raise Exception(msg)
         else:
             rev_range = '%s..%s' % (start_commit, end_commit)
-    cmd = 'git log --pretty=format:"%h" ' + rev_range
+    cmd = 'git log --pretty=format:"%H" ' + rev_range
     stat, commits = get_status_text_output(cmd)
     return commits
 
