@@ -106,7 +106,7 @@ def find_all_commits(start_commit, end_commit):
             rev_range = '%s..%s' % (start_commit, end_commit)
     cmd = 'git log --pretty=format:"%H" ' + rev_range
     stat, commits = get_status_text_output(cmd)
-    return commits
+    return commits[::-1]    # oldest first
 
 
 def tree_of_commit(commit):
