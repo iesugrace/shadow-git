@@ -36,16 +36,21 @@ class Pusher():
         """
         commits = lib.find_all_commits(self.last_pushed_plain, self.branch)
         if not commits: return
-        parent  = self.last_pushed_cipher
+        parent = self.last_pushed_cipher
+        name   = lib.dense_time_str() + '.tar.gpg'
+        key    = lib.generate_key()
         for commit in commits:
-            blob        = lib.encrypt_one_commit(commit)
-            tree        = lib.create_tree(blob)
-            new_commit  = lib.create_commit(tree, parent)
-            parent      = new_commit
-            self.new_objects.extend([new_commit, tree, blob])
+            lib.copy_out_objects(commit, topdir=name)
+        blob        = lib.encrypt_path(name, key)
+        tree        = lib.create_tree(blob, name, base=parent)
+        message     = 'CIPHER COMMIT\n\nTop: %s\nBot: %s\n' % (commits[-1], commits[0])
+        new_commit  = lib.create_commit(tree, parent, message)
+        self.new_objects.extend([new_commit, tree, blob])
         self.transformed          = True
-        self.newest_plain_commit = commits[-1]
+        self.newest_plain_commit  = commits[-1]
         self.newest_cipher_commit = new_commit
+        self.plain_key = key
+        lib.cleanup(name)
 
     def push(self):
         """ Push the transformed (encrypted) branch to the remote, update
