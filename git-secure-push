@@ -5,7 +5,7 @@
 # Desc: secure data before pushing it to the remote,
 # it pushes one branch at a time.
 
-import sys
+import os, sys
 import lib
 
 class Pusher():
@@ -62,9 +62,19 @@ class Pusher():
             lib.update_cipher_branch(self.cipher_branch, self.last_pushed_cipher)
             lib.prune_objects(self.new_objects)
 
+def help(ofile=sys.stdout):
+    """ Show help message
+    """
+    msg = 'Usage: %s remote branch' % os.path.basename(sys.argv[0])
+    print(msg, file=ofile)
+
 
 if __name__ == '__main__':
-    remote, branch = sys.argv[1:]
+    if len(sys.argv) < 3:
+        help(sys.stderr)
+        exit(1)
+
+    remote, branch = sys.argv[1:3]
     if not lib.find_git_dir():
         print('Not a git repository', file=sys.stderr)
         exit(1)
