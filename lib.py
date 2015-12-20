@@ -294,7 +294,7 @@ def create_tree(blob_id, file_name, base):
     elif orig_pos is not None:
         cmd = 'git checkout -f %s' % orig_pos
         stat, output = get_status_text_output(cmd)
-        if not stat: raise ShellCmdErrorException(cmd)
+        if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
     return tree_id
 
