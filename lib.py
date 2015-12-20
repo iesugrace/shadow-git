@@ -3,6 +3,8 @@ import hashlib, zlib
 import time
 from subprocess import Popen, PIPE, getstatusoutput
 
+empty_object_id = '0' * 40
+
 def find_git_dir():
     """ Return the absolute path of the .git directory """
     gitdir = os.getenv('GIT_DIR')
@@ -35,8 +37,7 @@ def get_last_pushed(branch):
     gitdir        = find_git_dir()
     pushed_record = os.path.join(gitdir, filename)
     tag           = branch + ':'
-    empty         = '0' * 40
-    result        = [empty, empty]
+    result        = [empty_object_id, empty_object_id]
     try:
         for line in open(pushed_record):
             if line.startswith(tag):
@@ -93,8 +94,7 @@ def find_all_commits(start_commit, end_commit):
     unless start_commit is 40 zeros, or exception will raise.
     On errer, return an empty list.
     """
-    empty = '0' * 40
-    if start_commit == empty:
+    if start_commit == empty_object_id:
         rev_range = end_commit
     else:
         if not reachable(start_commit, end_commit):
