@@ -298,6 +298,21 @@ def create_tree(blob_id, file_name, base):
 
     return tree_id
 
+def create_commit(tree, parent, message):
+    """ Create a commit object with the provided tree, parent, and message.
+    If the parent is all zero (40 zeros), we create a commit without a parent.
+    Return the id of the commit object.
+    """
+    cmd = ['git', 'commit-tree', tree]
+    if parent != empty_object_id:
+        cmd.extend(['-p', parent])
+    p = Popen(cmd, stdin=PIPE, stdout=PIPE)
+    p.stdin.write(message.encode())
+    output = p.communicate()[0]
+    stat   = p.wait()
+    if stat != 0: raise ShellCmdErrorException('error: ' + ' '.join(cmd))
+    return output.decode().strip()
+
 def dense_time_str(second=None):
     """ Return a time string from a second, no separator
     """
