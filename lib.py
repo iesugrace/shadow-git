@@ -270,20 +270,20 @@ def create_tree(blob_id, file_name, base):
         # checkout to the base commit, but log the current position first
         cmd = 'git branch'
         stat, output = get_status_text_output(cmd)
-        if not stat: raise ShellCmdErrorException(cmd)
+        if not stat: raise ShellCmdErrorException('error: ' + cmd)
         orig_pos = [x for x in output if x.startswith('*')][0]
         if 'detached' in orig_pos:
             orig_pos = orig_pos.split()[-1][:-1]
         cmd = 'git checkout %s' % base
         stat, output = get_status_text_output(cmd)
-        if not stat: raise ShellCmdErrorException(cmd)
+        if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
     cmd = 'git update-index --add --cacheinfo 100644 %s %s' % (blob_id, file_name)
     stat, output = get_status_text_output(cmd)
-    if not stat: raise ShellCmdErrorException(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
     cmd = 'git write-tree'
     stat, output = get_status_text_output(cmd)
-    if not stat: raise ShellCmdErrorException(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
     tree_id = output[0]
 
     # restore the index to the state before our work
@@ -291,7 +291,7 @@ def create_tree(blob_id, file_name, base):
         i = open(GIT_INDEX_FILE, 'wb')
         i.write(orig_tree_data)
         i.close()
-    else:
+    elif orig_pos is not None:
         cmd = 'git checkout -f %s' % orig_pos
         stat, output = get_status_text_output(cmd)
         if not stat: raise ShellCmdErrorException(cmd)
