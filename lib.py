@@ -234,15 +234,12 @@ def encrypt_path(path, key):
 def encrypt_one_commit(commit, key):
     """ Transform all objects of the given commit to an encrypted format.
         -- Copy out all objects of a commit
-        -- Archive, encrypt, and create a new blob in a pipe
+        -- Encrypt all files to a new blob
         -- Remove all temporary files and directories
         -- Return the new encrypted blob's ID
     """
     dir = commit
     copy_out_objects(commit, dir)
-    p1 = tar_to_stdout(path=dir, stdout=PIPE)
-    p2 = encrypt_pipe(stdin=p1.stdout, stdout=PIPE, key=key)
-    p3 = pipe_to_object(stdin=p2.stdout, stdout=PIPE)
-    id = p3.communicate()[0].decode()
+    id = encrypt_path(dir, key)
     cleanup(dir)
     return id
