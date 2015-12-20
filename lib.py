@@ -1,5 +1,6 @@
 import os, sys
 import hashlib, zlib
+import time
 from subprocess import Popen, PIPE, getstatusoutput
 
 def find_git_dir():
@@ -243,3 +244,9 @@ def encrypt_one_commit(commit, key):
     id = encrypt_path(dir, key)
     cleanup(dir)
     return id
+
+def dense_time_str(second=None):
+    """ Return a time string from a second, no separator
+    """
+    second = second if second else time.time()
+    return time.strftime('%Y%m%d%H%M%S', time.localtime(second))
