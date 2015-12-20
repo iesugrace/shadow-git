@@ -232,7 +232,7 @@ def encrypt_path(path, key):
     p1 = tar_to_stdout(path=path, stdout=PIPE)
     p2 = encrypt_pipe(stdin=p1.stdout, stdout=PIPE, key=key)
     p3 = pipe_to_object(stdin=p2.stdout, stdout=PIPE)
-    id = p3.communicate()[0].decode()
+    id = p3.communicate()[0].decode().strip()
     return id
 
 def encrypt_one_commit(commit, key):
