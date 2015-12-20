@@ -4,6 +4,7 @@ import time
 from subprocess import Popen, PIPE, getstatusoutput
 
 class ShellCmdErrorException(Exception): pass
+class NotReachableException(Exception): pass
 empty_object_id = '0' * 40
 
 def find_git_dir():
@@ -100,7 +101,7 @@ def find_all_commits(start_commit, end_commit):
     else:
         if not reachable(start_commit, end_commit):
             msg = '%s is not reachable from %s' % (start_commit, end_commit)
-            raise Exception(msg)
+            raise NotReachableException(msg)
         else:
             rev_range = '%s..%s' % (start_commit, end_commit)
     cmd = 'git log --pretty=format:"%H" ' + rev_range
