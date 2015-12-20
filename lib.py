@@ -43,7 +43,7 @@ def get_last_pushed(branch):
     try:
         for line in open(pushed_record):
             if line.startswith(tag):
-                result = line.split(':')[1:]
+                result = line.strip().split(':')[1:]
                 break
     except:
         pass
