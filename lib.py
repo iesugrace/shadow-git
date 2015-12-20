@@ -197,12 +197,13 @@ def tar_to_stdout(path, stdout):
 
 
 def encrypt_pipe(stdin, stdout, key):
-    """ Encrypt the data from the stdin, write it to stdout
+    """ Encrypt the data from the stdin, write it to stdout.
+    The key shall be a bytes.
     """
     infd, outfd = os.pipe()
     p = Popen(['gpg', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
                 stdin=stdin, stdout=stdout, pass_fds=[infd])
-    f = os.fdopen(outfd, 'w')
+    f = os.fdopen(outfd, 'wb')
     f.write(key)
     f.close()
     return p
