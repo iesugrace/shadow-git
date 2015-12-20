@@ -180,7 +180,7 @@ def copy_out_objects(commit, topdir=None):
     two chars for directory name, 38 chars for file name.
     """
     topdir = topdir if topdir else commit
-    os.mkdir(topdir)
+    os.makedirs(topdir, exist_ok=True)
     ids = collect_object_ids(commit)
     for id in ids:
         dir  = os.path.join(topdir, id[:2])
