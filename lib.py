@@ -372,6 +372,14 @@ def secure_key(key, tag_name):
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
 
+def generate_key():
+    """ Generate a random key, return a bytes
+    """
+    size = 128
+    key  = open('/dev/urandom', 'rb').read(size)
+    return key
+
+
 def read_pubkeys():
     """ Read the public keys of the cipher data recipients from the
     shadow-git config file, return a list.
