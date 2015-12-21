@@ -236,6 +236,7 @@ def encrypt_path(path, key):
     id = p3.communicate()[0].decode().strip()
     return id
 
+
 def encrypt_one_commit(commit, key):
     """ Transform all objects of the given commit to an encrypted format.
         -- Copy out all objects of a commit
@@ -248,6 +249,7 @@ def encrypt_one_commit(commit, key):
     id = encrypt_path(dir, key)
     cleanup(dir)
     return id
+
 
 def create_tree(blob_id, file_name, base):
     """ Create a tree object with the provided blob id and file name. Argument
@@ -299,6 +301,7 @@ def create_tree(blob_id, file_name, base):
 
     return tree_id
 
+
 def create_commit(tree, parent, message):
     """ Create a commit object with the provided tree, parent, and message.
     If the parent is all zero (40 zeros), we create a commit without a parent.
@@ -313,6 +316,7 @@ def create_commit(tree, parent, message):
     stat   = p.wait()
     if stat != 0: raise ShellCmdErrorException('error: ' + ' '.join(cmd))
     return output.decode().strip()
+
 
 def dense_time_str(second=None):
     """ Return a time string from a second, no separator
