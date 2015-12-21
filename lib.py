@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE, getstatusoutput
 
 class ShellCmdErrorException(Exception): pass
 class NotReachableException(Exception): pass
+class NoPubKeyException(Exception): pass
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
 
@@ -342,3 +343,46 @@ def update_cipher_branch(name, commit):
     cmd = 'git update-ref refs/heads/%s %s' % (name, commit)
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
+
+
+def secure_key(key, tag_name):
+    """ Encrypt the key and save it to a blob object; create a new tag
+    with name 'tag_name' that points to the encrypted key's blob object.
+    The key shall be a bytes.
+    """
+    # encrypt the key
+    gpg_cmd = ['gpg', '-e']
+    pubkeys = read_pubkeys()
+    if not pubkeys:
+        raise NoPubKeyException('no public key available')
+    for pubkey in pubkeys:
+        gpg_cmd.extend(['-r', pubkey])
+    git_cmd = ['git', 'hash-object', '-w', '--stdin']
+    p1 = Popen(gpg_cmd, stdin=PIPE, stdout=PIPE)
+    p2 = Popen(git_cmd, stdin=p1.stdout, stdout=PIPE)
+    p1.stdin.write(key)
+    p1.stdin.close()
+    blob_id = p2.communicate()[0].decode().strip()
+    stat    = p2.wait()
+    if stat != 0: raise ShellCmdErrorException('error: %s | %s', ' '.join(gpg_cmd), ' '.join(git_cmd))
+
+    # create a tag for the cipher key's blob object
+    cmd = 'git tag %s %s' % (tag_name, blob_id)
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
+
+
+def read_pubkeys():
+    """ Read the public keys of the cipher data recipients from the
+    shadow-git config file, return a list.
+    """
+    filename = 'pubkeys'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    result   = []
+    try:
+        lines  = open(path).readlines()
+        result = [x.strip() for x in lines if x != '\n']
+    except:
+        pass
+    return result
