@@ -77,6 +77,19 @@ def get_status_byte_output(cmd):
         return False, b''
 
 
+def in_proc_out(cmd, in_data):
+    """ Run shell command 'cmd', pass 'in_data' to the 'cmd' as
+    its standard input, return its standard output. The cmd shall
+    be a list, and in_data shall be a bytes.
+    """
+    p = Popen(cmd, stdin=PIPE, stdout=PIPE)
+    p.stdin.write(in_data)
+    output = p.communicate()[0]
+    stat   = p.wait()
+    res    = (True, output) if stat == 0 else (False, b'')
+    return res
+
+
 def reachable(start_commit, end_commit):
     """ Check if start_commit is reachable from the end_commit """
     cmd = 'git merge-base %s %s' % (start_commit, end_commit)
@@ -310,11 +323,8 @@ def create_commit(tree, parent, message):
     cmd = ['git', 'commit-tree', tree]
     if parent != empty_object_id:
         cmd.extend(['-p', parent])
-    p = Popen(cmd, stdin=PIPE, stdout=PIPE)
-    p.stdin.write(message.encode())
-    output = p.communicate()[0]
-    stat   = p.wait()
-    if stat != 0: raise ShellCmdErrorException('error: ' + ' '.join(cmd))
+    stat, output = in_proc_out(cmd, message.encode())
+    if not stat: raise ShellCmdErrorException('error: ' + ' '.join(cmd))
     return output.decode().strip()
 
 
