@@ -38,7 +38,7 @@ class Pusher():
         commits = lib.find_all_commits(self.last_pushed_plain, self.branch)
         if not commits: return
         parent = self.last_pushed_cipher
-        name   = lib.dense_time_str() + '.tar.gpg'
+        name   = lib.dense_time_str()
         dname  = name
         fname  = name + '.tar.gpg'
         tname  = 'symkey-' + name
