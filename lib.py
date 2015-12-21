@@ -37,7 +37,7 @@ def get_last_pushed(branch):
         branch-name:plaintext-commit:ciphertext-commit
 
     """
-    filename     = 'CIPHER_MAP'
+    filename     = 'location'
     gitdir       = find_git_dir()
     record_path  = os.path.join(gitdir, shadow_git_dir, filename)
     flag         = branch + ':'
