@@ -6,6 +6,7 @@ from subprocess import Popen, PIPE, getstatusoutput
 class ShellCmdErrorException(Exception): pass
 class NotReachableException(Exception): pass
 empty_object_id = '0' * 40
+shadow_git_dir  = 'shadow'
 
 def find_git_dir():
     """ Return the absolute path of the .git directory """
@@ -35,14 +36,14 @@ def get_last_pushed(branch):
         branch-name:plaintext-commit:ciphertext-commit
 
     """
-    filename      = 'CIPHER_MAP'
-    gitdir        = find_git_dir()
-    pushed_record = os.path.join(gitdir, filename)
-    tag           = branch + ':'
-    result        = [empty_object_id, empty_object_id]
+    filename     = 'CIPHER_MAP'
+    gitdir       = find_git_dir()
+    record_path  = os.path.join(gitdir, shadow_git_dir, filename)
+    flag         = branch + ':'
+    result       = [empty_object_id, empty_object_id]
     try:
-        for line in open(pushed_record):
-            if line.startswith(tag):
+        for line in open(record_path):
+            if line.startswith(flag):
                 result = line.strip().split(':')[1:]
                 break
     except:
