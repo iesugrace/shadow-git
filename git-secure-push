@@ -9,13 +9,12 @@ import os, sys
 import lib
 
 class Pusher():
-    """ finds out all commits created since the last secure-push in the given
-    branch, for each and every commit, do this: archive all objects of one
-    single commit, encrypt it, save it to a blob object, create a tree for it,
-    then a commit, the file name, author info are all faked. All encrypted
-    commits are in a totally separated branch named like this: cipher-master.
-    After transforming all plaintext commits into ciphertext, call the git-push
-    to do the actual push.
+    """ Find out all commits created since the last secure-push in the given
+    branch; archive all objects of all the commits found, encrypt it and save
+    it to a blob object, create a tree for it, then a commit; the file name,
+    author info can be faked . Encrypted commit will be placed in a totally
+    separated branch named like this: cipher-master. After transforming all
+    plaintext commits into ciphertext, call git-push to actually push.
     """
 
     def __init__(self, remote, branch):
