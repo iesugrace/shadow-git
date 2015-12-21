@@ -59,10 +59,8 @@ def get_status_text_output(cmd):
     of the stdout will be decoded.
     """
     stat, output = getstatusoutput(cmd)
-    if stat == 0:
-        return True, output.split('\n')
-    else:
-        return False, []
+    res    = (True, output.split('\n')) if stat == 0 else (False, [])
+    return res
 
 
 def get_status_byte_output(cmd):
@@ -72,10 +70,8 @@ def get_status_byte_output(cmd):
     p       = Popen(cmd, stdout=PIPE)
     output  = p.communicate()[0]
     stat    = p.wait()
-    if stat == 0:
-        return True, output
-    else:
-        return False, b''
+    res    = (True, output) if stat == 0 else (False, b'')
+    return res
 
 
 def in_proc_out(cmd, in_data):
