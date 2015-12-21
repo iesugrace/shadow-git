@@ -31,8 +31,10 @@ class Pusher():
         self.push()
 
     def transform(self):
-        """ Transform plaintext commits into ciphertext commits, including
-        all objects directly or indirectly referenced by the commits
+        """ Transform plaintext commits into one ciphertext commit, including
+        all objects directly or indirectly referenced by the commits;
+        create or update the cipher branch to point to the newly created
+        cipher commit; encrypt the symmetric key and create a new tag for it.
         """
         commits = lib.find_all_commits(self.last_pushed_plain, self.branch)
         if not commits: return
@@ -46,10 +48,11 @@ class Pusher():
         message     = 'CIPHER COMMIT\n\nTop: %s\nBot: %s\n' % (commits[-1], commits[0])
         new_commit  = lib.create_commit(tree, parent, message)
         self.new_objects.extend([new_commit, tree, blob])
+        lib.update_cipher_branch(self.cipher_branch, new_commit)
+        self.cipher_key_tag       = lib.secure_key(key)
         self.transformed          = True
         self.newest_plain_commit  = commits[-1]
         self.newest_cipher_commit = new_commit
-        self.plain_key = key
         lib.cleanup(name)
 
     def push(self):
