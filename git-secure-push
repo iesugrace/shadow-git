@@ -59,18 +59,20 @@ class Pusher():
         lib.cleanup(dname)
 
     def push(self):
-        """ Push the transformed (encrypted) branch to the remote, update
-        the last-pushed record mapping for the plain and cipher on success,
-        reset the cipher branch back to the last pushed on failure.
+        """ Push the transformed (encrypted) branch to the remote.
+        On success, update the last-pushed record mapping for the plain
+        and cipher; on failure, reset the cipher branch back to the last
+        pushed, remove the tag of the symmetric key, remove all objects
+        created thus far.
         """
         if not self.transformed: return
-        lib.update_cipher_branch(self.cipher_branch, self.newest_cipher_commit)
         if lib.push(self.remote, self.cipher_branch):
             lib.update_last_pushed(self.branch,
                         self.newest_plain_commit,
                         self.newest_cipher_commit)
         else:
             lib.update_cipher_branch(self.cipher_branch, self.last_pushed_cipher)
+            lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
 
 def help(ofile=sys.stdout):
