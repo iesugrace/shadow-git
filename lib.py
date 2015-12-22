@@ -458,3 +458,16 @@ def remove_branch(branch_name):
     cmd = 'git branch -D %s' % branch_name
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
+
+
+def prune_objects(ids):
+    """ Remove the object files from the Git object directory.
+    Because these objects are all new created, they had not gone
+    to a pack file yet.
+    """
+    gitdir       = find_git_dir()
+    object_dir   = os.path.join(gitdir, 'objects')
+    for id in ids:
+        dir  = os.path.join(object_dir, id[:2])
+        file = os.path.join(dir, id[2:])
+        os.unlink(file)
