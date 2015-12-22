@@ -78,6 +78,7 @@ class Pusher():
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
 
+
 def help(ofile=sys.stdout):
     """ Show help message
     """
@@ -94,6 +95,7 @@ if __name__ == '__main__':
     if not lib.find_git_dir():
         print('Not a git repository', file=sys.stderr)
         exit(1)
+
     try:
         Pusher(remote, branch)
     except Exception as e:
