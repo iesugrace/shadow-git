@@ -218,7 +218,7 @@ def encrypt_pipe(stdin, stdout, key):
     The key shall be a bytes.
     """
     infd, outfd = os.pipe()
-    p = Popen(['gpg', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
+    p = Popen(['gpg', '-q', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
                 stdin=stdin, stdout=stdout, pass_fds=[infd])
     f = os.fdopen(outfd, 'wb')
     f.write(key)
@@ -351,7 +351,7 @@ def secure_key(key, tag_name):
     The key shall be a bytes. Ruturn the blob id of the key's hash object.
     """
     # encrypt the key
-    gpg_cmd = ['gpg', '-e']
+    gpg_cmd = ['gpg', '-q', '-e']
     pubkeys = read_pubkeys()
     if not pubkeys:
         raise NoPubKeyException('no public key available')
