@@ -436,3 +436,11 @@ def update_last_pushed(branch, plain_commit, cipher_commit):
     for line in data:
         f.write(line)
     f.close()
+
+
+def remove_tag(tag_name):
+    """ Remove the tag of name 'tag_name'
+    """
+    cmd = 'git tag -d %s' % tag_name
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
