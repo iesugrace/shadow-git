@@ -406,3 +406,33 @@ def push(remote, branch):
     cmd  = 'git push %s %s' % (remote, branch)
     stat = os.system(cmd)
     return stat == 0
+
+
+def update_last_pushed(branch, plain_commit, cipher_commit):
+    """ Record the latest pushed cipher-branch and its plaintext
+    counterpart. Update if already exists, otherwise create a new.
+    """
+    filename     = 'location'
+    gitdir       = find_git_dir()
+    shadow_dir   = os.path.join(gitdir, shadow_git_dir)
+    record_path  = os.path.join(shadow_dir, filename)
+    data         = []
+    if os.path.exists(record_path):
+        # update
+        f    = open(record_path, 'a+')
+        data = f.readlines()
+        f.truncate(0)
+        flag = branch + ':'
+        for line in data:
+            if line.startswith(flag):
+                data.remove(line)
+                break
+    else:
+        # create a new
+        os.makedirs(shadow_dir, exist_ok=True)
+        f    = open(record_path, 'w')
+
+    data.append('%s:%s:%s\n' % (branch, plain_commit, cipher_commit))
+    for line in data:
+        f.write(line)
+    f.close()
