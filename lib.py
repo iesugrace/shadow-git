@@ -59,7 +59,11 @@ def get_status_text_output(cmd):
     of the stdout will be decoded.
     """
     stat, output = getstatusoutput(cmd)
-    res    = (True, output.split('\n')) if stat == 0 else (False, [])
+    if stat == 0:
+        output = output.split('\n') if output else []
+        res    = (True, output)
+    else:
+        res    = (False, [])
     return res
 
 
