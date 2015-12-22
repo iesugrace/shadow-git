@@ -291,6 +291,8 @@ def create_tree(blob_id, file_name, base):
         orig_pos = [x for x in output if x.startswith('*')][0]
         if 'detached' in orig_pos:
             orig_pos = orig_pos.split()[-1][:-1]
+        else:
+            orig_pos = orig_pos.split()[-1]
         cmd = 'git checkout %s' % base
         stat, output = get_status_text_output(cmd)
         if not stat: raise ShellCmdErrorException('error: ' + cmd)
