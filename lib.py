@@ -450,3 +450,11 @@ def remove_tag(tag_name):
     cmd = 'git tag -d %s' % tag_name
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
+
+
+def remove_branch(branch_name):
+    """ Remove the branch of name 'tag_name'
+    """
+    cmd = 'git branch -D %s' % branch_name
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
