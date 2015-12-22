@@ -36,7 +36,9 @@ class Pusher():
         cipher commit; encrypt the symmetric key and create a new tag for it.
         """
         commits = lib.find_all_commits(self.last_pushed_plain, self.branch)
-        if not commits: return
+        if not commits:
+            print('nothing to push')
+            return
         parent = self.last_pushed_cipher
         name   = lib.dense_time_str()
         dname  = name
