@@ -73,6 +73,7 @@ class Pusher():
                         self.newest_plain_commit,
                         self.newest_cipher_commit)
         else:
+            print('push failed, rolling back...', file=sys.stderr)
             lib.update_cipher_branch(self.cipher_branch, self.last_pushed_cipher)
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
