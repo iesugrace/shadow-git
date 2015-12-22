@@ -400,10 +400,10 @@ def read_pubkeys():
     return result
 
 
-def push(remote, branch):
+def push(remote, branch, tag):
     """ Push the branch to the remote using git-push
     """
-    cmd  = 'git push %s %s' % (remote, branch)
+    cmd  = 'git push %s %s %s' % (remote, branch, tag)
     stat = os.system(cmd)
     return stat == 0
 

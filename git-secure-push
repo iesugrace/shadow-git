@@ -68,7 +68,7 @@ class Pusher():
         created thus far.
         """
         if not self.transformed: return
-        if lib.push(self.remote, self.cipher_branch):
+        if lib.push(self.remote, self.cipher_branch, self.cipher_key_tag):
             lib.update_last_pushed(self.branch,
                         self.newest_plain_commit,
                         self.newest_cipher_commit)
