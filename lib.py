@@ -344,7 +344,7 @@ def update_cipher_branch(name, commit):
 def secure_key(key, tag_name):
     """ Encrypt the key and save it to a blob object; create a new tag
     with name 'tag_name' that points to the encrypted key's blob object.
-    The key shall be a bytes.
+    The key shall be a bytes. Ruturn the blob id of the key's hash object.
     """
     # encrypt the key
     gpg_cmd = ['gpg', '-e']
@@ -366,6 +366,8 @@ def secure_key(key, tag_name):
     cmd = 'git tag %s %s' % (tag_name, blob_id)
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
+
+    return blob_id
 
 
 def generate_key():

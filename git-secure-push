@@ -49,9 +49,9 @@ class Pusher():
         tree        = lib.create_tree(blob, fname, base=parent)
         message     = 'CIPHER COMMIT\n\nTop: %s\nBot: %s\n' % (commits[-1], commits[0])
         new_commit  = lib.create_commit(tree, parent, message)
-        self.new_objects.extend([new_commit, tree, blob])
+        key_blob    = lib.secure_key(key, tname)
         lib.update_cipher_branch(self.cipher_branch, new_commit)
-        lib.secure_key(key, tname)
+        self.new_objects.extend([new_commit, tree, blob, key_blob])
         self.cipher_key_tag       = tname
         self.transformed          = True
         self.newest_plain_commit  = commits[-1]
