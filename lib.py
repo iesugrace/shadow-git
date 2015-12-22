@@ -341,10 +341,16 @@ def dense_time_str(second=None):
 def update_cipher_branch(name, commit):
     """ Update the branch to point to the given commit, the
     branch will be automatically created if it does not exist.
+    It can also be used to move the branch back in the history,
+    when move it back to an not-exists commit (40 zeros), remove
+    the branch instead of update.
     """
-    cmd = 'git update-ref refs/heads/%s %s' % (name, commit)
-    stat, output = get_status_text_output(cmd)
-    if not stat: raise ShellCmdErrorException('error: ' + cmd)
+    if commit == empty_object_id:
+        remove_branch(name)
+    else:
+        cmd = 'git update-ref refs/heads/%s %s' % (name, commit)
+        stat, output = get_status_text_output(cmd)
+        if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
 
 def secure_key(key, tag_name):
