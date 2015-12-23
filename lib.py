@@ -411,10 +411,14 @@ def read_pubkeys():
 
 
 def push(remote, branch, tag):
-    """ Push the branch to the remote using git-push
+    """ Push the branch and symkey's tag to the remote using
+    git-push. If the branch failed, don't push the tag.
     """
-    cmd  = 'git push %s %s %s' % (remote, branch, tag)
+    cmd  = 'git push %s %s' % (remote, branch)
     stat = os.system(cmd)
+    if stat == 0:
+        cmd  = 'git push %s %s' % (remote, tag)
+        stat = os.system(cmd)
     return stat == 0
 
 
