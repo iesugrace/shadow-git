@@ -27,10 +27,14 @@ def find_git_dir():
     return gitdir
 
 
-def get_last_pushed(branch):
-    """ Return a tuple of positions of the branch and its
-    cipher counterpart when they had been pushed recently.
-    If they had never been pushed, return 40 zeros.
+def get_position_record(branch):
+    """ Return a tuple of positions of the branch and its cipher
+    counterpart. Of the plain branch, it is the commit which got
+    transformed and pushed recently, of the cipher branch, it is
+    the commit which synchronized with the remote recently.  If
+    the branch had never been pushed, return 40 zeros. The info
+    of the cipher branch can be altered when push to a remote, and
+    can also be altered when merge remote changes.
 
     Format of the pushed record file:
 

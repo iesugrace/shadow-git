@@ -21,9 +21,9 @@ class Pusher():
         self.remote             = remote
         self.branch             = branch
         self.cipher_branch      = 'cipher-' + branch
-        last_pushed             = lib.get_last_pushed(branch)
-        self.last_pushed_plain  = last_pushed[0]
-        self.last_pushed_cipher = last_pushed[1]
+        position_record         = lib.get_position_record(branch)
+        self.plain_position     = position_record[0]
+        self.cipher_position    = position_record[1]
         self.new_objects        = []
         self.transformed        = False
         self.transform()
@@ -35,11 +35,11 @@ class Pusher():
         create or update the cipher branch to point to the newly created
         cipher commit; encrypt the symmetric key and create a new tag for it.
         """
-        commits = lib.find_all_commits(self.last_pushed_plain, self.branch)
+        commits = lib.find_all_commits(self.plain_position, self.branch)
         if not commits:
             print('nothing to push')
             return
-        parent = self.last_pushed_cipher
+        parent = self.cipher_position
         name   = lib.dense_time_str()
         dname  = name
         fname  = name + '.tar.gpg'
@@ -74,7 +74,7 @@ class Pusher():
                         self.newest_cipher_commit)
         else:
             print('push failed, rolling back...', file=sys.stderr)
-            lib.update_cipher_branch(self.cipher_branch, self.last_pushed_cipher)
+            lib.update_cipher_branch(self.cipher_branch, self.cipher_position)
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
 
