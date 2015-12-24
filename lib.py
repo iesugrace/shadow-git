@@ -418,7 +418,7 @@ def read_pubkeys():
     result   = []
     try:
         lines  = open(path).readlines()
-        result = [x.strip() for x in lines if x != '\n']
+        result = [x.strip().split(":")[-1] for x in lines if x != '\n']
     except:
         pass
     return result
