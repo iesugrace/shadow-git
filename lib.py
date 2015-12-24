@@ -289,14 +289,7 @@ def create_tree(blob_id, file_name, base):
             os.unlink(GIT_INDEX_FILE)
     else:
         # checkout to the base commit, but log the current position first
-        cmd = 'git branch'
-        stat, output = get_status_text_output(cmd)
-        if not stat: raise ShellCmdErrorException('error: ' + cmd)
-        orig_pos = [x for x in output if x.startswith('*')][0]
-        if 'detached' in orig_pos:
-            orig_pos = orig_pos.split()[-1][:-1]
-        else:
-            orig_pos = orig_pos.split()[-1]
+        orig_pos = current_branch()
         cmd = 'git checkout %s' % base
         stat, output = get_status_text_output(cmd)
         if not stat: raise ShellCmdErrorException('error: ' + cmd)
@@ -321,6 +314,18 @@ def create_tree(blob_id, file_name, base):
 
     return tree_id
 
+def current_branch():
+    """ Return current branch's name
+    """
+    cmd = 'git branch'
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
+    pos = [x for x in output if x.startswith('*')][0]
+    if 'detached' in pos:
+        pos = pos.split()[-1][:-1]
+    else:
+        pos = pos.split()[-1]
+    return pos
 
 def create_commit(tree, parent, message):
     """ Create a commit object with the provided tree, parent, and message.
