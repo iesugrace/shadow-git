@@ -6,6 +6,8 @@ from subprocess import Popen, PIPE, getstatusoutput
 class ShellCmdErrorException(Exception): pass
 class NotReachableException(Exception): pass
 class NoPubKeyException(Exception): pass
+class NotGitRepoException(Exception): pass
+
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
 
@@ -24,6 +26,8 @@ def find_git_dir():
                 break
             else:                       # go up
                 cwd, junk = os.path.split(cwd)
+    if not gitdir:
+        raise NotGitRepoException
     return gitdir
 
 
