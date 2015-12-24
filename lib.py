@@ -381,7 +381,7 @@ def secure_key(key, tag_name):
     p1.stdin.close()
     blob_id = p2.communicate()[0].decode().strip()
     stat    = p2.wait()
-    if stat != 0: raise ShellCmdErrorException('error: %s | %s', ' '.join(gpg_cmd), ' '.join(git_cmd))
+    if stat != 0: raise ShellCmdErrorException('error: %s | %s' % (' '.join(gpg_cmd), ' '.join(git_cmd)))
 
     # create a tag for the cipher key's blob object
     cmd = 'git tag %s %s' % (tag_name, blob_id)
