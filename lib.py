@@ -446,10 +446,22 @@ def update_position_record(branch, plain_commit, cipher_commit):
         os.makedirs(shadow_dir, exist_ok=True)
         f    = open(record_path, 'w')
 
+    plain_commit  = revision_parse(plain_commit)
+    cipher_commit = revision_parse(cipher_commit)
     data.append('%s:%s:%s\n' % (branch, plain_commit, cipher_commit))
     for line in data:
         f.write(line)
     f.close()
+
+
+def revision_parse(rev):
+    """ Use git-rev-parse to parse the rev name
+    """
+    cmd = 'git rev-parse %s' % rev
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException(cmd)
+    id = output[0]
+    return id
 
 
 def remove_tag(tag_name):
