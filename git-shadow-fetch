@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# Author: Joshua Chen
+# Date: 2015-12-23
+# Location: Shenzhen
+# Desc: fetch the shadowed data from the Git server,
+# and decrypt it to a local plain-text branch.
+
+import os, sys
+import lib
+
+class Fetcher():
+    """ Fetch the cipher branch from the remote, merge it into the local
+    cipher branch, decrypt it, create a new temporary plain branch for it
+    """
+    def __init__(self, remote, branch):
+        self.remote             = remote
+        self.branch             = branch
+        self.cipher_branch      = 'cipher-' + branch
+        self.rt_cipher_branch   = 'refs/remotes/' + self.remote + '/' + self.cipher_branch
+        self.plain_branch       = 'plain-%s-%s' % (remote, branch)
+        self.cipher_key_tag     = None
+        self.fetch()
+
+    def fetch(self):
+        """ Fetch the cipher branch from the remote, decrypt it,
+        create a new temporary plain branch points to it.
+        """
+        stat, tag_name = lib.fetch(self.remote, self.cipher_branch, self.rt_cipher_branch)
+        if not stat:
+            print('fetch failed', file=sys.stderr)
+            return False
+        self.cipher_key_tag = tag_name
+        lib.update_branch(self.cipher_branch, self.rt_cipher_branch)
+        key = lib.decrypt_key(self.cipher_key_tag)
+        tip = lib.decrypt_commit(self.cipher_branch, key)
+        lib.update_branch(self.plain_branch, tip)
+
+
+def help(ofile=sys.stdout):
+    """ Show help message
+    """
+    msg = 'Usage: %s remote branch' % os.path.basename(sys.argv[0])
+    print(msg, file=ofile)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        help(sys.stderr)
+        exit(1)
+
+    remote, branch = sys.argv[1:3]
+    if not lib.find_git_dir():
+        print('Not a git repository', file=sys.stderr)
+        exit(1)
+
+    try:
+        Fetcher(remote, branch)
+    except Exception as e:
+        print(str(e))
+        exit(1)
+    else:
+        exit(0)

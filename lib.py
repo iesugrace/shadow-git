@@ -496,3 +496,102 @@ def prune_objects(ids):
         dir  = os.path.join(object_dir, id[:2])
         file = os.path.join(dir, id[2:])
         os.unlink(file)
+
+
+def fetch(remote, src, dst):
+    """ Fetch the branch 'src' from remote to dst with git-fetch
+    """
+    cmd      = 'git fetch %s %s:%s' % (remote, src, dst)
+    stat     = os.system(cmd)
+    tag_name = None
+    if stat == 0:           # get the symkey
+        cmd = 'git rev-parse %s^{tree}' % dst
+        stat, output = get_status_text_output(cmd)
+        if not stat: raise ShellCmdErrorException(cmd)
+        tree_name     = output[0]
+        tag_name      = 'symkey-' + tree_name
+        tag_local_ref = 'refs/tags/' + tag_name
+        cmd  = 'git fetch %s %s:%s' % (remote, tag_name, tag_local_ref)
+        stat = os.system(cmd)
+    return (stat == 0, tag_name)
+
+
+def decrypt_key(key_tag):
+    """ Decrypt the key pointed by the tag 'key_tag',
+    Return the plain-text key, it is a bytes.
+    """
+    git_cmd = ['git', 'cat-file', 'blob', key_tag]
+    gpg_cmd = ['gpg', '-q', '-d']
+    p1      = Popen(git_cmd, stdout=PIPE)
+    p2      = Popen(gpg_cmd, stdin=p1.stdout, stdout=PIPE)
+    key     = p2.communicate()[0]
+    stat    = p2.wait()
+    if stat != 0: raise ShellCmdErrorException('error: %s | %s' % (' '.join(git_cmd), ' '.join(gpg_cmd)))
+    return key
+
+
+def object_to_pipe(id, otype):
+    """ Read the Git object and write it to pipe
+    """
+    cmd = ['git', 'cat-file', otype, id]
+    p = Popen(cmd, stdout=PIPE)
+    return p
+
+
+def decrypt_pipe(stdin, key):
+    """ Decrypt the data from pipe and write it to pipe
+    """
+    infd, outfd = os.pipe()
+    cmd = ['gpg', '-q', '-d', '--passphrase-fd=%s' % infd]
+    p = Popen(cmd, stdin=stdin, stdout=PIPE, pass_fds=[infd])
+    f = os.fdopen(outfd, 'wb')
+    f.write(key)
+    f.close()
+    return p
+
+
+def untar_from_stdin(stdin, extra_opts=[]):
+    """ Extract data from stdin
+    """
+    cmd = ['tar', '-xf', '-'] + extra_opts
+    p = Popen(cmd, stdin=stdin, stdout=PIPE)
+    return p
+
+
+def extract_from_message(commit, keyword):
+    """ Return a designated part of data from the commit message, used
+    to extract the Blob id, the tip of the branch of a cipher commit.
+    """
+    cmd = 'git cat-file -p %s' % commit
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException(cmd)
+    line    = [x for x in output if keyword in x][0]
+    target  = line.split()[-1]
+    return target
+
+
+def get_cipher_blob_id(commit):
+    """ Return the object id of the cipher blob in a cipher commit
+    """
+    return extract_from_message(commit, 'Blob:')
+
+
+def get_tip_inside_cipher(commit):
+    """ Return the tip object of the branch inside the cipher commit
+    """
+    return extract_from_message(commit, 'Top:')
+
+
+def decrypt_commit(commit, key):
+    """ Decrypt the encrypted blob object of the cipher commit
+    """
+    gitdir     = find_git_dir()
+    object_dir = os.path.join(gitdir, 'objects')
+    blob_id    = get_cipher_blob_id(commit)
+    p1         = object_to_pipe(blob_id, 'blob')
+    p2         = decrypt_pipe(p1.stdout, key)
+    p3         = untar_from_stdin(p2.stdout, ['-C', object_dir, '--strip-components=1'])
+    p3.communicate()
+    stat       = p3.wait()
+    if stat != 0: raise ShellCmdErrorException('error: decrypt commit')
+    return get_tip_inside_cipher(commit)
