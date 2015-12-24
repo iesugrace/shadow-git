@@ -667,3 +667,116 @@ def env_ok():
         print('fatal: shadow git not initialized', file=sys.stderr)
         return False
     return True
+
+
+def create_shadow_dir():
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir)
+    os.makedirs(path, exist_ok=True)
+
+
+def add_pubkey():
+    """ Add one public key to the key file
+    """
+    filename = 'pubkeys'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    name     = None
+    email    = None
+    while not name: name = input('Your name: ')
+    while not email: email = input('Email: ')
+    while True:
+        keyid = input('Public key [%s]: ' % email)
+        if not keyid: keyid = email
+        if pubkey_exists(keyid):
+            break
+        else:
+            print("key %s not available"  % keyid, file=sys.stderr)
+    data = '{name} <{email}>:{keyid}\n'.format(name=name, email=email, keyid=keyid)
+    open(path, 'a').write(data)
+    return '%s <%s>' % (name, email)
+
+
+def pubkey_exists(keyid):
+    """ Check if the public key is accessible by gpg command
+    """
+    cmd = 'gpg --list-keys %s' % keyid
+    stat, output = get_status_text_output(cmd)
+    return stat
+
+
+def install_hook():
+    """ Install the push hook
+    """
+    script=r"""#!/bin/sh
+remote="$1"
+url="$2"
+z40=0000000000000000000000000000000000000000
+IFS=' '
+while read local_ref local_sha remote_ref remote_sha
+do
+	if [ "$local_sha" = $z40 ]
+	then
+		# Handle delete
+		:
+	else
+		if [ "$remote_sha" = $z40 ]
+		then
+			# New branch, examine all commits
+			range="$local_sha"
+		else
+			# Update to existing branch, examine new commits
+			range="$remote_sha..$local_sha"
+		fi
+
+		# Check for encryption flag
+        cipher_commit=$(git rev-list --grep '^CIPHER$' --grep '^Tree' --grep '^Blob' \
+                            --grep '^Top' --grep '^Bot' --all-match "$range" | wc -l)
+        total_commit=$(git rev-list "$range" | wc -l)
+		if [ "$cipher_commit" -ne "$total_commit" ]; then
+			echo "some plaintext commits found in $local_ref, not pushing"
+			exit 1
+		fi
+	fi
+done
+
+exit 0
+"""
+    filename = 'pre-push'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, 'hooks', filename)
+    open(path, 'w').write(script)
+    os.system('chmod +x ' + path)
+
+
+def setup_identity():
+    """ Generate a fake identity
+    """
+    random_data = generate_key()
+    sha = hashlib.sha1(random_data).hexdigest()
+    name1, name2, email1, email2, email3 = (sha[:7], sha[7:14], sha[14:25], sha[25:37], sha[37:])
+    data = '%s %s:%s@%s.%s\n' % (name1, name2, email1, email2, email3)
+    filename = 'id'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    open(path, 'w').write(data)
+
+
+def read_shadow_id():
+    """ Read the shadow identity from shadow config file
+    """
+    filename = 'id'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    data     = open(path, 'r').read()
+    return data.strip().split(":")
+
+
+def set_init_mark():
+    """ Create the mark file .git/shadow/.initialized
+    """
+    gitdir   = find_git_dir()
+    dir_name = 'shadow'
+    filename = '.initialized'
+    path     = os.path.join(gitdir, dir_name, filename)
+    open(path, 'w')

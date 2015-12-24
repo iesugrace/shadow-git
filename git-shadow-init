@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+# Author: Joshua Chen
+# Date: 2015-12-24
+# Location: Shenzhen
+# Desc: initialize the shadow git environment,
+
+import os, sys
+import lib
+
+class Initializer():
+    """ Initialize the environment, do the following:
+    1. create .git/shadow directory,
+    2. add key to .git/shadow/pubkeys,
+       check the accessibility of the key
+    3. install push hook
+    4. setup a shadow identity
+    5. set the init mark
+    """
+    def __init__(self):
+        lib.create_shadow_dir()
+        lib.add_pubkey()
+        lib.install_hook()
+        lib.setup_identity()
+        lib.set_init_mark()
+        print("all done")
+
+
+if __name__ == '__main__':
+    if not lib.is_git():
+        print('fatal: Not a git repository', file=sys.stderr)
+        exit(1)
+    if lib.shadow_initialized():
+        print('already initialized')
+        exit(0)
+
+    try:
+        Initializer()
+    except Exception as e:
+        print(str(e))
+        exit(1)
+    else:
+        exit(0)
