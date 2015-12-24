@@ -595,3 +595,39 @@ def decrypt_commit(commit, key):
     stat       = p3.wait()
     if stat != 0: raise ShellCmdErrorException('error: decrypt commit')
     return get_tip_inside_cipher(commit)
+
+
+def merge(branch):
+    """ Merge the branch 'branch' into the current branch with git-merge
+    """
+    cmd      = 'git merge %s' % branch
+    stat     = os.system(cmd)
+    return stat == 0
+
+
+def calc_plain_position(old_cur, remote, cur, old_record):
+    """ Calculate the commit id on which the next shadow-push will
+    find out the change set to push. If the old_record is not an
+    empty object id, return it, otherwise, figure out one.
+    """
+    if old_record != empty_object_id:
+        return old_record
+    old_cur = revision_parse(old_cur)
+    cur     = revision_parse(cur)
+    remote  = revision_parse(remote)
+    set1 = find_all_commits(old_cur, cur)
+    set2 = find_all_commits(remote, cur)
+
+    if len(set1) < len(set2):   # make sure set1 is longer
+        set3 = set1
+        set1 = set2
+        set2 = set3
+    common_len = len(set2)
+    if common_len == 0:
+        diff_set = set1
+    else:
+        diff_set = set1[:-common_len]
+    if len(diff_set) == 0:
+        return old_record   # possible?
+    else:
+        return diff_set[-1]
