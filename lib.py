@@ -342,7 +342,7 @@ def dense_time_str(second=None):
     return time.strftime('%Y%m%d%H%M%S', time.localtime(second))
 
 
-def update_cipher_branch(name, commit):
+def update_branch(name, commit):
     """ Update the branch to point to the given commit, the
     branch will be automatically created if it does not exist.
     It can also be used to move the branch back in the history,
@@ -422,7 +422,7 @@ def push(remote, branch, tag):
     return stat == 0
 
 
-def update_last_pushed(branch, plain_commit, cipher_commit):
+def update_position_record(branch, plain_commit, cipher_commit):
     """ Record the latest pushed cipher-branch and its plaintext
     counterpart. Update if already exists, otherwise create a new.
     """

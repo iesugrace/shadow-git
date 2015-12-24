@@ -52,7 +52,7 @@ class Pusher():
         new_commit  = lib.create_commit(tree, parent, message)
         tname       = 'symkey-' + tree
         key_blob    = lib.secure_key(key, tname)
-        lib.update_cipher_branch(self.cipher_branch, new_commit)
+        lib.update_branch(self.cipher_branch, new_commit)
         self.new_objects.extend([new_commit, tree, blob, key_blob])
         self.cipher_key_tag       = tname
         self.transformed          = True
@@ -69,12 +69,12 @@ class Pusher():
         """
         if not self.transformed: return
         if lib.push(self.remote, self.cipher_branch, self.cipher_key_tag):
-            lib.update_last_pushed(self.branch,
+            lib.update_position_record(self.branch,
                         self.newest_plain_commit,
                         self.newest_cipher_commit)
         else:
             print('push failed, rolling back...', file=sys.stderr)
-            lib.update_cipher_branch(self.cipher_branch, self.cipher_position)
+            lib.update_branch(self.cipher_branch, self.cipher_position)
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
 
