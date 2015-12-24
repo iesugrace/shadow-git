@@ -391,8 +391,10 @@ def secure_key(key, tag_name):
     p1.stdin.write(key)
     p1.stdin.close()
     blob_id = p2.communicate()[0].decode().strip()
-    stat    = p2.wait()
-    if stat != 0: raise ShellCmdErrorException('error: %s | %s' % (' '.join(gpg_cmd), ' '.join(git_cmd)))
+    stat1   = p1.wait()
+    stat2   = p2.wait()
+    if stat1 != 0 or stat2 != 0:
+        raise ShellCmdErrorException('error: %s | %s' % (' '.join(gpg_cmd), ' '.join(git_cmd)))
 
     # create a tag for the cipher key's blob object
     cmd = 'git tag %s %s' % (tag_name, blob_id)
@@ -536,8 +538,10 @@ def decrypt_key(key_tag):
     p1      = Popen(git_cmd, stdout=PIPE)
     p2      = Popen(gpg_cmd, stdin=p1.stdout, stdout=PIPE)
     key     = p2.communicate()[0]
-    stat    = p2.wait()
-    if stat != 0: raise ShellCmdErrorException('error: %s | %s' % (' '.join(git_cmd), ' '.join(gpg_cmd)))
+    stat1   = p1.wait()
+    stat2   = p2.wait()
+    if stat1 != 0 or stat2 != 0:
+        raise ShellCmdErrorException('error: %s | %s' % (' '.join(git_cmd), ' '.join(gpg_cmd)))
     return key
 
 
@@ -603,8 +607,11 @@ def decrypt_commit(commit, key):
     p2         = decrypt_pipe(p1.stdout, key)
     p3         = untar_from_stdin(p2.stdout, ['-C', object_dir, '--strip-components=1'])
     p3.communicate()
-    stat       = p3.wait()
-    if stat != 0: raise ShellCmdErrorException('error: decrypt commit')
+    stat1      = p1.wait()
+    stat2      = p2.wait()
+    stat3      = p3.wait()
+    if stat1 != 0 or stat2 != 0 or stat3 != 0:
+        raise ShellCmdErrorException('error: decrypt commit')
     return get_tip_inside_cipher(commit)
 
 
