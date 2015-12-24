@@ -380,7 +380,9 @@ def secure_key(key, tag_name):
     gpg_cmd = ['gpg', '-q', '-e']
     pubkeys = read_pubkeys()
     if not pubkeys:
-        raise NoPubKeyException('no public key available')
+        msg =  'no public key available\n'
+        msg += '  use "git shadow-key add ..." to add one'
+        raise NoPubKeyException(msg)
     for pubkey in pubkeys:
         gpg_cmd.extend(['-r', pubkey])
     git_cmd = ['git', 'hash-object', '-w', '--stdin']
