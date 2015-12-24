@@ -635,3 +635,35 @@ def calc_plain_position(old_cur, remote, cur, old_record):
         return old_record   # possible?
     else:
         return diff_set[-1]
+
+
+def shadow_initialized():
+    """ Check if the shadow-git environment had been initialized
+    """
+    gitdir   = find_git_dir()
+    dir_name = 'shadow'
+    filename = '.initialized'
+    path     = os.path.join(gitdir, dir_name, filename)
+    return os.path.exists(path)
+
+
+def is_git():
+    """ Return True if it's a git repository
+    """
+    try:
+        find_git_dir()
+    except NotGitRepoException as e:
+        return False
+    return True
+
+
+def env_ok():
+    """ Check if it is a git repository, and shadow-git initialized
+    """
+    if not is_git():
+        print('fatal: Not a git repository', file=sys.stderr)
+        return False
+    if not shadow_initialized():
+        print('fatal: shadow git not initialized', file=sys.stderr)
+        return False
+    return True
