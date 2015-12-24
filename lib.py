@@ -336,6 +336,11 @@ def create_commit(tree, parent, message):
     If the parent is all zero (40 zeros), we create a commit without a parent.
     Return the id of the commit object.
     """
+    # use shadow identity
+    shadow_auther, shadow_email = read_shadow_id()
+    os.environ.putenv('GIT_AUTHOR_NAME', shadow_auther)
+    os.environ.putenv('GIT_AUTHOR_EMAIL', shadow_email)
+
     cmd = ['git', 'commit-tree', tree]
     if parent != empty_object_id:
         cmd.extend(['-p', parent])
