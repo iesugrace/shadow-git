@@ -48,7 +48,7 @@ class Pusher():
             lib.copy_out_objects(commit, topdir=dname)
         blob        = lib.encrypt_path(dname, key)
         tree        = lib.create_tree(blob, fname, base=parent)
-        message     = 'CIPHER %s\n\nTop: %s\nBot: %s\n' % (tree, commits[-1], commits[0])
+        message     = 'CIPHER\n\nTree: %s\nBlob: %s\nTop: %s\nBot: %s\n' % (tree, blob, commits[-1], commits[0])
         new_commit  = lib.create_commit(tree, parent, message)
         tname       = 'symkey-' + tree
         key_blob    = lib.secure_key(key, tname)
