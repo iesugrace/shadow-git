@@ -429,6 +429,15 @@ def read_pubkeys():
     return result
 
 
+def write_pubkeys(keys):
+    """ Write the public keys in the list to the shadow key file
+    """
+    filename = 'pubkeys'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    open(path, 'w').writelines(keys)
+
+
 def push(remote, branch, tag):
     """ Push the branch and symkey's tag to the remote using
     git-push. If the branch failed, don't push the tag.
@@ -704,16 +713,13 @@ def get_id(id):
 def add_author_pubkey():
     """ Add current user's public key to the key file
     """
-    filename = 'pubkeys'
-    gitdir   = find_git_dir()
-    path     = os.path.join(gitdir, shadow_git_dir, filename)
     name     = get_id('user.name')
     email    = get_id('user.email')
     if not name or not email:
         raise UserIdNotAvailableException("user info not available")
     name, email, keyid = ask_key_info(name=name, email=email)
     line = '{name} <{email}>:{keyid}\n'.format(name=name, email=email, keyid=keyid)
-    open(path, 'w').write(line)
+    write_pubkeys([line])
 
 
 def ask_key_info(name=None, email=None, keyid=None):
