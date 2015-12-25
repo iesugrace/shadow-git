@@ -8,6 +8,7 @@ class NotReachableException(Exception): pass
 class NoPubKeyException(Exception): pass
 class NotGitRepoException(Exception): pass
 class UserIdNotAvailableException(Exception): pass
+class WrongArgumentException(Exception): pass
 
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
@@ -830,3 +831,57 @@ def set_init_mark():
     filename = '.initialized'
     path     = os.path.join(gitdir, dir_name, filename)
     open(path, 'w')
+
+
+def add_pubkey(name=None, email=None, keyid=None):
+    """ Add a public key to the key file
+    """
+    pubkeys  = read_pubkeys()
+    if not name or not email or not keyid:
+        name, email, keyid = ask_key_info(name, email, keyid)
+    # check if already exists
+    existing = [x for x in pubkeys if x[1] == keyid]
+    if existing:
+        print("record exists")
+        print('%s [%s]' % (existing[0][1], existing[0][0]))
+        exit(1)
+    new_key  = ['%s <%s>' % (name, email), keyid]
+    pubkeys.append(new_key)
+    lines    = ['%s:%s\n' % (p1, p2) for p1, p2 in pubkeys]
+    write_pubkeys(lines)
+
+
+def list_pubkeys():
+    """ List all public keys from the key file
+    """
+    pubkeys = read_pubkeys()
+    for name_info, key in pubkeys:
+        print('%s [%s]' % (key, name_info))
+
+
+def remove_pubkey(kw):
+    pubkeys = read_pubkeys()
+    remains = []
+    removes = []
+    for name, key in pubkeys:
+        if kw in name or kw in key:
+            removes.append([name, key])
+        else:
+            remains.append([name, key])
+    if len(removes) == 0:
+        print("no match", file=sys.stderr)
+        return False
+    elif len(removes) > 1:
+        print("more than one match", file=sys.stderr)
+        for name, key in removes:
+            print('%s [%s]' % (key, name))
+        return False
+    else:
+        msg =  "about to remove the following key:\n\n"
+        msg += '  %s [%s]\n\n' % (removes[0][1], removes[0][0])
+        msg += 'confirm? [y/N]: '
+        i = input(msg)
+        if i in ('y', 'Y'):
+            lines = ['%s:%s\n' % (p1, p2) for p1, p2 in remains]
+            write_pubkeys(lines)
+        return True
