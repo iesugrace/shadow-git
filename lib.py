@@ -384,7 +384,7 @@ def secure_key(key, tag_name):
         msg =  'no public key available\n'
         msg += '  use "git shadow-key add ..." to add one'
         raise NoPubKeyException(msg)
-    for pubkey in pubkeys:
+    for name, pubkey in pubkeys:
         gpg_cmd.extend(['-r', pubkey])
     git_cmd = ['git', 'hash-object', '-w', '--stdin']
     p1 = Popen(gpg_cmd, stdin=PIPE, stdout=PIPE)
@@ -423,7 +423,7 @@ def read_pubkeys():
     result   = []
     try:
         lines  = open(path).readlines()
-        result = [x.strip().split(":")[-1] for x in lines if x != '\n']
+        result = [x.strip().split(":") for x in lines if x != '\n']
     except:
         pass
     return result
