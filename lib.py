@@ -7,6 +7,7 @@ class ShellCmdErrorException(Exception): pass
 class NotReachableException(Exception): pass
 class NoPubKeyException(Exception): pass
 class NotGitRepoException(Exception): pass
+class UserIdNotAvailableException(Exception): pass
 
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
@@ -689,26 +690,55 @@ def create_shadow_dir():
     os.makedirs(path, exist_ok=True)
 
 
-def add_pubkey():
-    """ Add one public key to the key file
+def get_id(id):
+    """ Get user id from git config
+    """
+    cmd = 'git config %s' % id
+    stat, text = get_status_text_output(cmd)
+    if stat:
+        return text[0]
+    else:
+        return ''
+
+
+def add_author_pubkey():
+    """ Add current user's public key to the key file
     """
     filename = 'pubkeys'
     gitdir   = find_git_dir()
     path     = os.path.join(gitdir, shadow_git_dir, filename)
-    name     = None
-    email    = None
-    while not name: name = input('Your name: ')
+    name     = get_id('user.name')
+    email    = get_id('user.email')
+    if not name or not email:
+        raise UserIdNotAvailableException("user info not available")
+    name, email, keyid = ask_key_info(name=name, email=email)
+    line = '{name} <{email}>:{keyid}\n'.format(name=name, email=email, keyid=keyid)
+    open(path, 'w').write(line)
+
+
+def ask_key_info(name=None, email=None, keyid=None):
+    """ Add one public key to the key file.
+    Will not ask for name or email if they're already provided,
+    the provided keyid will be used for default when ask.
+    """
+    while not name:  name  = input('Name: ')
     while not email: email = input('Email: ')
+    default_keyid = keyid if keyid else email
+    msg = 'Public key [%s]: ' % default_keyid
     while True:
-        keyid = input('Public key [%s]: ' % email)
-        if not keyid: keyid = email
+        keyid = input(msg)
+        if not keyid:
+            if default_keyid:
+                keyid = default_keyid
+            else:
+                continue
         if pubkey_exists(keyid):
             break
         else:
             print("key %s not available"  % keyid, file=sys.stderr)
-    data = '{name} <{email}>:{keyid}\n'.format(name=name, email=email, keyid=keyid)
-    open(path, 'a').write(data)
-    return '%s <%s>' % (name, email)
+            default_keyid = None
+            msg = 'Public key: '
+    return (name, email, keyid)
 
 
 def pubkey_exists(keyid):
