@@ -885,3 +885,19 @@ def remove_pubkey(kw):
             lines = ['%s:%s\n' % (p1, p2) for p1, p2 in remains]
             write_pubkeys(lines)
         return True
+
+
+def update_symkeys():
+    """ Decrypte and re-encrypte all the symmetric keys with
+    all the public keys in the shadow pubkeys database.
+    """
+
+
+def push_symkeys(remote):
+    """ Push all encrypted symmetric keys to the remote.
+    """
+
+
+def fetch_symkeys(remote):
+    """ Fetch all encrypted symmetric keys from the remote.
+    """

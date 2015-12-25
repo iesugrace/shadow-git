@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# Author: Joshua Chen
+# Date: 2015-12-25
+# Location: Shenzhen
+# Desc: manage symmetric keys of the cipher commits
+
+import os, sys
+prog_path = os.path.realpath(__file__)
+prog_dir  = os.path.dirname(prog_path)
+sys.path.insert(0, prog_dir)
+import lib
+
+class KeyManager:
+    """ Update local, or push to the remote, or fetch from the remote
+    """
+    def __init__(self, argv):
+        argv = argv[1:]
+        cmd  = argv.pop(0)
+        if cmd == "update":
+            lib.update_symkeys()
+        elif cmd == "push":
+            lib.push_symkeys(argv[0])
+        elif cmd == "fetch":
+            lib.fetch_symkeys(argv[0])
+        else:
+            raise lib.WrongArgumentException
+
+
+def help(ofile=sys.stdout):
+    """ Show help message
+    """
+    bname = os.path.basename(sys.argv[0])
+    msg =  'Usage: %s update\n' % bname
+    msg += '       %s push <repository>\n' % bname
+    msg += '       %s fetch <repository>' % bname
+    print(msg, file=ofile)
+
+
+if __name__ == '__main__':
+    if not lib.env_ok():
+        exit(1)
+    try:
+        KeyManager(sys.argv)
+    except (IndexError, lib.WrongArgumentException) as e:
+        help(sys.stderr)
+        exit(1)
+    except KeyboardInterrupt:
+        exit(1)
+    except:
+        exit(1)
+    else:
+        exit(0)
