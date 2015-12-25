@@ -26,7 +26,7 @@ class KeyManager:
         elif cmd == "list":
             self.list()
         else:
-            raise WrongArgumentException
+            raise lib.WrongArgumentException
 
     def list(self):
         lib.list_pubkeys()
