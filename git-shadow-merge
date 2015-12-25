@@ -8,6 +8,9 @@
 # temporary plain branch when successfully merged.
 
 import os, sys
+prog_path = os.path.realpath(__file__)
+prog_dir  = os.path.dirname(prog_path)
+sys.path.insert(0, prog_dir)
 import lib
 
 class Merger():
