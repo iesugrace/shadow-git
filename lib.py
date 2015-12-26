@@ -379,13 +379,14 @@ def secure_key(key, tag_name, force=False):
     The key shall be a bytes. Ruturn the blob id of the key's hash object.
     """
     # encrypt the key
-    gpg_cmd = ['gpg', '-q', '-e']
-    pubkeys = read_pubkeys()
-    if not pubkeys:
+    gpg_cmd      = ['gpg', '-q', '-e']
+    pubkeys      = read_pubkeys()
+    enabled_keys = [key for stat, key in pubkeys if stat]
+    if not enabled_keys:
         msg =  'no public key available\n'
         msg += '  use "git shadow-key add ..." to add one'
         raise NoPubKeyException(msg)
-    for name, pubkey in pubkeys:
+    for name, pubkey in enabled_keys:
         gpg_cmd.extend(['-r', pubkey])
     git_cmd = ['git', 'hash-object', '-w', '--stdin']
     p1 = Popen(gpg_cmd, stdin=PIPE, stdout=PIPE)
@@ -426,6 +427,7 @@ def read_pubkeys():
     try:
         lines  = open(path).readlines()
         result = [x.strip().split(":") for x in lines if x != '\n']
+        result = [(False, x) if x[0].startswith('#') else (True, x) for x in result]
     except:
         pass
     return result
@@ -840,31 +842,37 @@ def add_pubkey(name=None, email=None, keyid=None):
     if not name or not email or not keyid:
         name, email, keyid = ask_key_info(name, email, keyid)
     # check if already exists
-    existing = [x for x in pubkeys if x[1] == keyid]
+    enabled_keys = [key for stat, key in pubkeys if stat]
+    existing     = [x for x in enabled_keys if x[1] == keyid]
     if existing:
         print("record exists")
         print('%s [%s]' % (existing[0][1], existing[0][0]))
         exit(1)
+    all_keys = [key for stat, key in pubkeys]
     new_key  = ['%s <%s>' % (name, email), keyid]
-    pubkeys.append(new_key)
-    lines    = ['%s:%s\n' % (p1, p2) for p1, p2 in pubkeys]
+    all_keys.append(new_key)
+    lines    = ['%s:%s\n' % (p1, p2) for p1, p2 in all_keys]
     write_pubkeys(lines)
 
 
 def list_pubkeys():
     """ List all public keys from the key file
     """
-    pubkeys = read_pubkeys()
-    for name_info, key in pubkeys:
+    pubkeys      = read_pubkeys()
+    enabled_keys = [key for stat, key in pubkeys if stat]
+    for name_info, key in enabled_keys:
         print('%s [%s]' % (key, name_info))
 
 
 def remove_pubkey(kw):
-    pubkeys = read_pubkeys()
-    remains = []
-    removes = []
-    for name, key in pubkeys:
-        if kw in name or kw in key:
+    pubkeys  = read_pubkeys()
+    all_keys = [key for stat, key in pubkeys]
+    remains  = []
+    removes  = []
+    for name, key in all_keys:
+        if name.startswith('#'):        # keep the commented keys
+            remains.append([name, key])
+        elif kw in name or kw in key:
             removes.append([name, key])
         else:
             remains.append([name, key])
