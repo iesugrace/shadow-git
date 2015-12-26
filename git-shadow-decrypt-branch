@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# Author: Joshua Chen
+# Date: 2015-12-26
+# Location: Shenzhen
+# Desc: decrypt a cipher branch
+
+import os, sys
+prog_path = os.path.realpath(__file__)
+prog_dir  = os.path.dirname(prog_path)
+sys.path.insert(0, prog_dir)
+import lib
+
+
+def help(ofile=sys.stdout):
+    """ Show help message
+    """
+    bname = os.path.basename(sys.argv[0])
+    msg =  'Usage: %s branch' % bname
+    print(msg, file=ofile)
+
+
+if __name__ == '__main__':
+    if not lib.env_ok():
+        exit(1)
+
+    if len(sys.argv) == 2:
+        try:
+            tip = lib.decrypt_branch(sys.argv[1])
+        except KeyboardInterrupt:
+            exit(1)
+        except:
+            exit(1)
+        else:
+            print(tip)
+            exit(0)
+    else:
+        help(ofile=sys.stderr)
+        exit(1)

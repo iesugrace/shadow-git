@@ -968,3 +968,14 @@ def fetch_symkeys(remote):
         if stat != 0:
             return False
     return True
+
+
+def decrypt_branch(branch):
+    """ Decrypt all commits of a cipher branch,
+    return the tip of the plain-text branch
+    """
+    commits = get_commit_list(branch)
+    commits = commits[::-1]    # oldest first
+    for commit in commits:
+        decrypt_commit(commit)
+    return get_tip_inside_cipher(commit)
