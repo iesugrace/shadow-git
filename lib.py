@@ -129,8 +129,7 @@ def find_all_commits(start_commit, end_commit):
             raise NotReachableException(msg)
         else:
             rev_range = '%s..%s' % (start_commit, end_commit)
-    cmd = 'git log --pretty=format:"%H" ' + rev_range
-    stat, commits = get_status_text_output(cmd)
+    commits = get_commit_list(rev_range)
     return commits[::-1]    # oldest first
 
 
@@ -532,12 +531,8 @@ def fetch(remote, src, dst):
     stat     = os.system(cmd)
     tag_name = None
     if stat == 0:           # get the symkey
-        cmd = 'git rev-parse %s^{tree}' % dst
-        stat, output = get_status_text_output(cmd)
-        if not stat: raise ShellCmdErrorException(cmd)
-        tree_name     = output[0]
-        tag_name      = 'symkey-' + tree_name
-        cmd  = 'git fetch %s tag %s' % (remote, tag_name)
+        tag_name = get_commit_symkey_name(dst)
+        cmd      = 'git fetch %s tag %s' % (remote, tag_name)
         stat = os.system(cmd)
     return (stat == 0, tag_name)
 
@@ -895,6 +890,24 @@ def remove_pubkey(kw):
         return True
 
 
+def get_commit_symkey_name(commit):
+    """ Return the tag name of the key of a cipher commit
+    """
+    cmd = 'git rev-parse %s^{tree}' % commit
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException(cmd)
+    tree = output[0]
+    return 'symkey-' + tree
+
+
+def get_commit_list(rev_range):
+    """ Return the tag name of the key of a cipher commit
+    """
+    cmd = 'git rev-list %s' % rev_range
+    stat, output = get_status_text_output(cmd)
+    return output
+
+
 def get_all_symkey_names():
     """ Return a list of tag names of the symmetric keys
     """
@@ -904,14 +917,9 @@ def get_all_symkey_names():
     commits = []
     tags = []
     for b in branches:
-        cmd = 'git rev-list %s' % b
-        stat, output = get_status_text_output(cmd)
-        commits.extend(output)
+        commits.extend(get_commit_list(b))
     for commit in set(commits): # remove redundant
-        cmd = 'git rev-parse %s^{tree}' % commit
-        stat, output = get_status_text_output(cmd)
-        tree = output[0]
-        tags.append('symkey-' + tree)
+        tags.append(get_commit_symkey_name(commit))
     return tags
 
 
