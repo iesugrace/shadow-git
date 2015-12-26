@@ -531,10 +531,10 @@ def fetch(remote, src, dst):
     stat     = os.system(cmd)
     tag_name = None
     if stat == 0:           # get the symkey
-        tag_name = get_commit_symkey_name(dst)
-        cmd      = 'git fetch %s tag %s' % (remote, tag_name)
+        tag  = get_commit_symkey_name(dst)
+        cmd  = 'git fetch %s tag %s' % (remote, tag)
         stat = os.system(cmd)
-    return (stat == 0, tag_name)
+    return stat == 0
 
 
 def decrypt_key(key_tag):
@@ -605,9 +605,12 @@ def get_tip_inside_cipher(commit):
     return extract_from_message(commit, 'Top:')
 
 
-def decrypt_commit(commit, key):
+def decrypt_commit(commit, key=None):
     """ Decrypt the encrypted blob object of the cipher commit
     """
+    if not key:
+        tag = get_commit_symkey_name(commit)
+        key = decrypt_key(tag)
     gitdir     = find_git_dir()
     object_dir = os.path.join(gitdir, 'objects')
     blob_id    = get_cipher_blob_id(commit)

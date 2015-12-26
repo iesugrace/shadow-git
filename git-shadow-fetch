@@ -21,21 +21,18 @@ class Fetcher():
         self.cipher_branch      = 'cipher-' + branch
         self.rt_cipher_branch   = 'refs/remotes/' + self.remote + '/' + self.cipher_branch
         self.plain_branch       = 'plain-%s-%s' % (remote, branch)
-        self.cipher_key_tag     = None
         self.fetch()
 
     def fetch(self):
         """ Fetch the cipher branch from the remote, decrypt it,
         create a new temporary plain branch points to it.
         """
-        stat, tag_name = lib.fetch(self.remote, self.cipher_branch, self.rt_cipher_branch)
+        stat = lib.fetch(self.remote, self.cipher_branch, self.rt_cipher_branch)
         if not stat:
             print('fetch failed', file=sys.stderr)
             return False
-        self.cipher_key_tag = tag_name
         lib.update_branch(self.cipher_branch, self.rt_cipher_branch)
-        key = lib.decrypt_key(self.cipher_key_tag)
-        tip = lib.decrypt_commit(self.cipher_branch, key)
+        tip = lib.decrypt_commit(self.cipher_branch)
         lib.update_branch(self.plain_branch, tip)
 
 
