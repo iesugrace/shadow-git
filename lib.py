@@ -944,4 +944,16 @@ def push_symkeys(remote):
 
 def fetch_symkeys(remote):
     """ Fetch all encrypted symmetric keys from the remote.
+    All symmetric keys known by the local repository will
+    be fetched.
     """
+    tags = get_all_symkey_names()
+    size = 80   # how many tags to push at once
+    while tags:
+        ready, tags = tags[:size], tags[size:]
+        tags_args   = ' '.join(ready)
+        cmd  = 'git fetch %s tag %s' % (remote, tags_args)
+        stat = os.system(cmd)
+        if stat != 0:
+            return False
+    return True
