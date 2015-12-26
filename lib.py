@@ -373,7 +373,7 @@ def update_branch(name, commit):
         if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
 
-def secure_key(key, tag_name):
+def secure_key(key, tag_name, force=False):
     """ Encrypt the key and save it to a blob object; create a new tag
     with name 'tag_name' that points to the encrypted key's blob object.
     The key shall be a bytes. Ruturn the blob id of the key's hash object.
@@ -399,7 +399,8 @@ def secure_key(key, tag_name):
         raise ShellCmdErrorException('error: %s | %s' % (' '.join(gpg_cmd), ' '.join(git_cmd)))
 
     # create a tag for the cipher key's blob object
-    cmd = 'git tag %s %s' % (tag_name, blob_id)
+    force_arg = '-f' if force else ''
+    cmd = 'git tag %s %s %s' % (force_arg, tag_name, blob_id)
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
@@ -887,10 +888,24 @@ def remove_pubkey(kw):
         return True
 
 
+def get_all_symkeys():
+    """ Return a list of all tags of the symmetric keys
+    """
+    cmd = 'git tag'
+    stat, output = get_status_text_output(cmd)
+    tags = [x for x in output if x.startswith('symkey-')]
+    return tags
+
+
 def update_symkeys():
     """ Decrypte and re-encrypte all the symmetric keys with
-    all the public keys in the shadow pubkeys database.
+    all the public keys in the shadow pubkeys database, replace
+    the existing tags.
     """
+    tags = get_all_symkeys()
+    for tag in tags:
+        key = decrypt_key(tag)
+        secure_key(key, tag, force=True)
 
 
 def push_symkeys(remote):
