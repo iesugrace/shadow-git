@@ -535,8 +535,7 @@ def fetch(remote, src, dst):
         if not stat: raise ShellCmdErrorException(cmd)
         tree_name     = output[0]
         tag_name      = 'symkey-' + tree_name
-        tag_local_ref = 'refs/tags/' + tag_name
-        cmd  = 'git fetch %s %s:%s' % (remote, tag_name, tag_local_ref)
+        cmd  = 'git fetch %s tag %s' % (remote, tag_name)
         stat = os.system(cmd)
     return (stat == 0, tag_name)
 
