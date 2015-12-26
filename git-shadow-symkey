@@ -19,9 +19,11 @@ class KeyManager:
         if cmd == "update":
             lib.update_symkeys()
         elif cmd == "push":
-            lib.push_symkeys(argv[0])
+            if not lib.push_symkeys(argv[0]):
+                raise Exception
         elif cmd == "fetch":
-            lib.fetch_symkeys(argv[0])
+            if not lib.fetch_symkeys(argv[0]):
+                raise Exception
         else:
             raise lib.WrongArgumentException
 
