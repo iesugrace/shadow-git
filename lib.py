@@ -895,12 +895,23 @@ def remove_pubkey(kw):
         return True
 
 
-def get_all_symkeys():
-    """ Return a list of all tags of the symmetric keys
+def get_all_symkey_names():
+    """ Return a list of tag names of the symmetric keys
     """
-    cmd = 'git tag'
+    cmd = 'git branch'
     stat, output = get_status_text_output(cmd)
-    tags = [x for x in output if x.startswith('symkey-')]
+    branches = [x for x in output if x[2:].startswith('cipher-')]
+    commits = []
+    tags = []
+    for b in branches:
+        cmd = 'git rev-list %s' % b
+        stat, output = get_status_text_output(cmd)
+        commits.extend(output)
+    for commit in set(commits): # remove redundant
+        cmd = 'git rev-parse %s^{tree}' % commit
+        stat, output = get_status_text_output(cmd)
+        tree = output[0]
+        tags.append('symkey-' + tree)
     return tags
 
 
@@ -909,7 +920,7 @@ def update_symkeys():
     all the public keys in the shadow pubkeys database, replace
     the existing tags.
     """
-    tags = get_all_symkeys()
+    tags = get_all_symkey_names()
     for tag in tags:
         key = decrypt_key(tag)
         secure_key(key, tag, force=True)
@@ -919,7 +930,7 @@ def push_symkeys(remote):
     """ Push all encrypted symmetric keys to the remote, replace
     the existing tags on the remote.
     """
-    tags = get_all_symkeys()
+    tags = get_all_symkey_names()
     size = 80   # how many tags to push at once
     while tags:
         ready, tags = tags[:size], tags[size:]
