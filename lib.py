@@ -909,8 +909,19 @@ def update_symkeys():
 
 
 def push_symkeys(remote):
-    """ Push all encrypted symmetric keys to the remote.
+    """ Push all encrypted symmetric keys to the remote, replace
+    the existing tags on the remote.
     """
+    tags = get_all_symkeys()
+    size = 80   # how many tags to push at once
+    while tags:
+        ready, tags = tags[:size], tags[size:]
+        tags_args   = ' '.join(ready)
+        cmd  = 'git push -f %s %s' % (remote, tags_args)
+        stat = os.system(cmd)
+        if stat != 0:
+            return False
+    return True
 
 
 def fetch_symkeys(remote):
