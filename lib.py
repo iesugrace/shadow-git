@@ -7,7 +7,6 @@ class ShellCmdErrorException(Exception): pass
 class NotReachableException(Exception): pass
 class NoPubKeyException(Exception): pass
 class NotGitRepoException(Exception): pass
-class UserIdNotAvailableException(Exception): pass
 class WrongArgumentException(Exception): pass
 
 empty_object_id = '0' * 40
@@ -712,15 +711,30 @@ def get_id(id):
 
 
 def add_author_pubkey():
-    """ Add current user's public key to the key file
+    """ Add current user's public key to the key file.
+    Get user's name and email from git config, if it's
+    not available, ask and set one for the project.
     """
     name     = get_id('user.name')
     email    = get_id('user.email')
     if not name or not email:
-        raise UserIdNotAvailableException("user info not available")
+        print('no user info available from git,')
+        print('setting one for the current project ...')
+        name, email = set_project_user_id()
     name, email, keyid = ask_key_info(name=name, email=email)
     line = '{name} <{email}>:{keyid}\n'.format(name=name, email=email, keyid=keyid)
     write_pubkeys([line])
+
+
+def set_project_user_id():
+    """ Set a project level user info interactively
+    """
+    name = email = None
+    while not name:  name  = input('Name: ')
+    while not email: email = input('Email: ')
+    get_status_text_output('git config user.name %s' % name)
+    get_status_text_output('git config user.email %s' % email)
+    return (name, email)
 
 
 def ask_key_info(name=None, email=None, keyid=None):
