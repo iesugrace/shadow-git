@@ -969,7 +969,7 @@ def get_commit_symkey_name(commit):
 
 
 def get_commit_list(rev_range):
-    """ Return the tag name of the key of a cipher commit
+    """ Return a list of commits of the rev_range
     """
     cmd = 'git rev-list %s' % rev_range
     stat, output = get_status_text_output(cmd)
