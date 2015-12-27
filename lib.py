@@ -1027,7 +1027,7 @@ def fetch_symkeys(remote):
     size = 80   # how many tags to push at once
     while tags:
         ready, tags = tags[:size], tags[size:]
-        tags_args   = ' '.join(ready)
+        tags_args   = ' tag '.join(ready)
         cmd  = 'git fetch %s tag %s' % (remote, tags_args)
         stat = os.system(cmd)
         if stat != 0:
