@@ -351,10 +351,8 @@ def create_tree(blob_id, file_name, base):
 def current_branch():
     """ Return current branch's name
     """
-    cmd = 'git branch'
-    stat, output = get_status_text_output(cmd)
-    if not stat: raise ShellCmdErrorException('error: ' + cmd)
-    pos = [x for x in output if x.startswith('*')][0]
+    branches = get_all_branches()
+    pos = [x for x in branches if x.startswith('*')][0]
     if 'detached' in pos:
         pos = pos.split()[-1][:-1]
     else:
