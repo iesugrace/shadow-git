@@ -38,6 +38,8 @@ if __name__ == '__main__':
 
     try:
         Initializer()
+    except KeyboardInterrupt:
+        exit(1)
     except Exception as e:
         print(str(e))
         exit(1)

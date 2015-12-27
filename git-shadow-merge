@@ -61,6 +61,8 @@ if __name__ == '__main__':
     branch = sys.argv[1]
     try:
         Merger(branch)
+    except KeyboardInterrupt:
+        exit(1)
     except Exception as e:
         print(str(e))
         exit(1)
