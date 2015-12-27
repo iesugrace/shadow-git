@@ -981,7 +981,7 @@ def get_all_symkey_names():
     """
     cmd = 'git branch'
     stat, output = get_status_text_output(cmd)
-    branches = [x for x in output if x[2:].startswith('cipher-')]
+    branches = [x for x in output if x[2:].startswith(cipher_branch_prefix)]
     commits = []
     tags = []
     for b in branches:
