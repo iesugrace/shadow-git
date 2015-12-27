@@ -27,8 +27,9 @@ How to use?
         # git shadow-init
 
     4. when you want to push to the server, run a command like the following,
-       it will create a new branch named 'cipher-master' in the local repo,
-       and push this 'cipher-master' to the remote.
+       it will create a new branch named like 'cipher-origin-master' in the
+       local repo, and push this 'cipher-origin-master' to the remote, but
+       the name of the branch on the remote will be 'cipher-master'.
         # git shadow-push origin master
 
     5. fetch from the server. This command will fetch data from the remote and
