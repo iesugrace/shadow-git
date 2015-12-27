@@ -1007,7 +1007,7 @@ def push_symkeys(remote):
     the existing tags on the remote.
     """
     tags = get_all_symkey_names()
-    size = 80   # how many tags to push at once
+    size = 70   # how many tags to push at once
     while tags:
         ready, tags = tags[:size], tags[size:]
         tags_args   = ' '.join(ready)
@@ -1024,7 +1024,7 @@ def fetch_symkeys(remote):
     be fetched.
     """
     tags = get_all_symkey_names()
-    size = 80   # how many tags to push at once
+    size = 70   # how many tags to push at once
     while tags:
         ready, tags = tags[:size], tags[size:]
         tags_args   = ' tag '.join(ready)
