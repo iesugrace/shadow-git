@@ -29,7 +29,7 @@ class Fetcher():
         """
         stat = lib.fetch(self.remote, self.cipher_branch, self.rt_cipher_branch)
         if not stat:
-            print('fetch failed', file=sys.stderr)
+            print('Fetch failed', file=sys.stderr)
             return False
         lib.update_branch(self.cipher_branch, self.rt_cipher_branch)
         tip = lib.decrypt_commit(self.cipher_branch)

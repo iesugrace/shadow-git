@@ -27,20 +27,20 @@ class Merger():
 
     def merge(self):
         if self.cur_branch != self.orig_branch:
-            print('checkout branch %s, then try again' % self.orig_branch, file=sys.stderr)
+            print('Checkout branch %s, then try again' % self.orig_branch, file=sys.stderr)
             return False
         cur_branch_old_pos = lib.revision_parse(self.cur_branch)
         stat = lib.merge(self.remote_branch)
         if not stat:
-            print('merge failed, solve the problem, and try again', file=sys.stderr)
+            print('Merge failed, solve the problem, and try again', file=sys.stderr)
             return False
         pos = lib.get_position_record(self.orig_branch)
         plain_pos = lib.calc_plain_position(cur_branch_old_pos,
                         self.remote_branch, self.cur_branch, pos[0])
         lib.update_position_record(self.orig_branch, plain_pos, self.cipher_branch)
-        print('position record updated')
+        print('Position record updated')
         lib.remove_branch(self.remote_branch)
-        print('temporary branch removed')
+        print('Temporary branch %s removed' % self.remote_branch)
 
 
 def help(ofile=sys.stdout):

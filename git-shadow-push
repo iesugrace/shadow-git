@@ -40,7 +40,7 @@ class Pusher():
         """
         commits = lib.find_all_commits(self.plain_position, self.branch)
         if not commits:
-            print('nothing to push')
+            print('Nothing to push')
             return
         parent = self.cipher_position
         name   = lib.dense_time_str()
@@ -76,7 +76,7 @@ class Pusher():
                         self.newest_plain_commit,
                         self.newest_cipher_commit)
         else:
-            print('push failed, rolling back...', file=sys.stderr)
+            print('Push failed, rolling back...', file=sys.stderr)
             lib.update_branch(self.cipher_branch, self.cipher_position)
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
