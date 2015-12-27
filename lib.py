@@ -32,7 +32,7 @@ def find_git_dir():
     return gitdir
 
 
-def get_position_record(branch):
+def get_position_record(remote, branch):
     """ Return a tuple of positions of the branch and its cipher
     counterpart. Of the plain branch, it is the commit which got
     transformed and pushed recently, of the cipher branch, it is
@@ -41,23 +41,50 @@ def get_position_record(branch):
     of the cipher branch can be altered when push to a remote, and
     can also be altered when merge remote changes.
 
+    It's highly possible that two local branches share common
+    commits, when push the second branch, the common part shall
+    not be pushed again, because it had been pushed when pushing
+    the first branch.
+
     Format of the pushed record file:
 
-        branch-name:plaintext-commit:ciphertext-commit
+        remote:branch:plaintext-commit:ciphertext-commit
 
     """
     filename     = 'location'
     gitdir       = find_git_dir()
     record_path  = os.path.join(gitdir, shadow_git_dir, filename)
-    flag         = branch + ':'
+    flag         = '%s:' % remote
     result       = [empty_object_id, empty_object_id]
     try:
-        for line in open(record_path):
-            if line.startswith(flag):
-                result = line.strip().split(':')[1:]
-                break
+        lines = open(record_path).readlines()
     except:
         pass
+    else:
+        lines = [x for x in lines if x.startswith(flag)] # same remote branches
+        flag  = '%s:%s:' % (remote, branch)
+        target_pairs = result
+        for line in lines:
+            if line.startswith(flag):
+                result = line.strip().split(':')[-2:]
+                lines.remove(line)
+                break
+        # pick the one that results in less commits
+        if len(lines):
+            target_p    = result[0]
+            if target_p == empty_object_id:
+                rev_range = branch
+            else:
+                rev_range = '%s..%s' % (target_p, branch)
+            cmt_count   = len(get_commit_list(rev_range))
+            other_pairs = [x.strip().split(':')[-2:] for x in lines]
+            for other_p, other_c in other_pairs:
+                rev_range = '%s..%s' % (other_p, branch)
+                count     = len(get_commit_list(rev_range))
+                if count < cmt_count:
+                    cmt_count = count
+                    target_p = other_p
+            result[0] = target_p
 
     return result
 
@@ -440,11 +467,11 @@ def write_pubkeys(keys):
     open(path, 'w').writelines(keys)
 
 
-def push(remote, branch, tag):
+def push(remote, lc_branch, rmt_branch, tag):
     """ Push the branch and symkey's tag to the remote using
     git-push. If the branch failed, don't push the tag.
     """
-    cmd  = 'git push %s %s' % (remote, branch)
+    cmd  = 'git push %s %s:%s' % (remote, lc_branch, rmt_branch)
     stat = os.system(cmd)
     if stat == 0:
         cmd  = 'git push %s %s' % (remote, tag)
@@ -452,8 +479,8 @@ def push(remote, branch, tag):
     return stat == 0
 
 
-def update_position_record(branch, plain_commit, cipher_commit):
-    """ Record the latest pushed cipher-branch and its plaintext
+def update_position_record(remote, branch, plain_commit, cipher_commit):
+    """ Record the latest pushed cipher branch and its plaintext
     counterpart. Update if already exists, otherwise create a new.
     """
     filename     = 'location'
@@ -462,25 +489,25 @@ def update_position_record(branch, plain_commit, cipher_commit):
     record_path  = os.path.join(shadow_dir, filename)
     data         = []
     if os.path.exists(record_path):
-        # update
-        f    = open(record_path, 'a+')
+        # update existing record file
+        f = open(record_path, 'a+')
+        f.seek(0)
         data = f.readlines()
         f.truncate(0)
-        flag = branch + ':'
+        flag = '%s:%s:' % (remote, branch)
         for line in data:
             if line.startswith(flag):
                 data.remove(line)
                 break
     else:
-        # create a new
+        # create a new record file
         os.makedirs(shadow_dir, exist_ok=True)
-        f    = open(record_path, 'w')
+        f = open(record_path, 'w')
 
     plain_commit  = revision_parse(plain_commit)
     cipher_commit = revision_parse(cipher_commit)
-    data.append('%s:%s:%s\n' % (branch, plain_commit, cipher_commit))
-    for line in data:
-        f.write(line)
+    data.append('%s:%s:%s:%s\n' % (remote, branch, plain_commit, cipher_commit))
+    f.writelines(data)
     f.close()
 
 

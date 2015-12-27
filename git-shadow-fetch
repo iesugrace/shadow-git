@@ -16,24 +16,28 @@ class Fetcher():
     cipher branch, decrypt it, create a new temporary plain branch for it
     """
     def __init__(self, remote, branch):
-        self.remote             = remote
-        self.branch             = branch
-        self.cipher_branch      = 'cipher-' + branch
-        self.rt_cipher_branch   = 'refs/remotes/' + self.remote + '/' + self.cipher_branch
-        self.plain_branch       = 'plain-%s-%s' % (remote, branch)
+        self.remote       = remote
+        self.branch       = branch
+        self.rmt_c_branch = 'cipher-%s' % branch
+        self.rt_c_branch  = 'refs/remotes/' + self.remote + '/' + self.rmt_c_branch
+        self.lc_c_branch  = 'cipher-%s-%s' % (remote, branch)
+        self.plain_branch = 'plain-%s-%s' % (remote, branch)
         self.fetch()
 
     def fetch(self):
         """ Fetch the cipher branch from the remote, decrypt it,
         create a new temporary plain branch points to it.
         """
-        stat = lib.fetch(self.remote, self.cipher_branch, self.rt_cipher_branch)
+        stat = lib.fetch(self.remote, self.rmt_c_branch, self.rt_c_branch)
         if not stat:
             print('Fetch failed', file=sys.stderr)
             return False
-        lib.update_branch(self.cipher_branch, self.rt_cipher_branch)
-        tip = lib.decrypt_commit(self.cipher_branch)
-        lib.update_branch(self.plain_branch, tip)
+        if lib.revision_parse(self.lc_c_branch) != lib.revision_parse(self.rt_c_branch):
+            lib.update_branch(self.lc_c_branch, self.rt_c_branch)
+            tip = lib.decrypt_commit(self.lc_c_branch)
+            lib.update_branch(self.plain_branch, tip)
+        else:
+            print('No change on the remote, nothing to do.')
 
 
 def help(ofile=sys.stdout):

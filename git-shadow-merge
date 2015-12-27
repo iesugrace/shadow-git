@@ -20,8 +20,10 @@ class Merger():
     """
     def __init__(self, remote_branch):
         self.remote_branch = remote_branch
-        self.orig_branch   = remote_branch.split('-')[-1]
-        self.cipher_branch = 'cipher-' + self.orig_branch
+        parts = remote_branch.split('-')    # format: plain-remotename-branchname
+        self.remote_name   = parts[1]
+        self.orig_branch   = parts[-1]
+        self.cipher_branch = 'cipher-%s-%s' % (self.remote_name, self.orig_branch)
         self.cur_branch    = lib.current_branch()
         self.merge()
 
@@ -34,10 +36,11 @@ class Merger():
         if not stat:
             print('Merge failed, solve the problem, and try again', file=sys.stderr)
             return False
-        pos = lib.get_position_record(self.orig_branch)
+        pos = lib.get_position_record(self.remote_name, self.orig_branch)
         plain_pos = lib.calc_plain_position(cur_branch_old_pos,
                         self.remote_branch, self.cur_branch, pos[0])
-        lib.update_position_record(self.orig_branch, plain_pos, self.cipher_branch)
+        lib.update_position_record(self.remote_name, self.orig_branch,
+                        plain_pos, self.cipher_branch)
         print('Position record updated')
         lib.remove_branch(self.remote_branch)
         print('Temporary branch %s removed' % self.remote_branch)
