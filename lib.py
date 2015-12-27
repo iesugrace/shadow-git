@@ -11,6 +11,7 @@ class WrongArgumentException(Exception): pass
 
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
+symkey_tag_prefix = 'symkey-'
 
 def find_git_dir():
     """ Return the absolute path of the .git directory """
@@ -941,7 +942,7 @@ def get_commit_symkey_name(commit):
     stat, output = get_status_text_output(cmd)
     if not stat: raise ShellCmdErrorException(cmd)
     tree = output[0]
-    return 'symkey-' + tree
+    return symkey_tag_prefix + tree
 
 
 def get_commit_list(rev_range):
