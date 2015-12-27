@@ -52,5 +52,6 @@ How to use?
         8.1 do this on an old member's computer:
             # git shadow-symkey update
             # git shadow-symkey push origin
-        8.2 do this on the new member's computer
-            # git shadow-clone ...
+        8.2 do this on the new member's computer, it will clone the repo,
+            setup shadow git, and decrypt the cipher branches.
+            # git shadow-clone <repository>
