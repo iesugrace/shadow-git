@@ -3,9 +3,9 @@
 # Date: 2015-12-23
 # Location: Shenzhen
 # Desc: merge the local temporary plain branch into the target
-# branch, update the 'cipher_position' of the position record
-# file to the tip of the local cipher branch. Remove the local
-# temporary plain branch when successfully merged.
+# branch, update the 'plain_position' and 'cipher_position' of
+# the position record file to the tip of the local cipher branch.
+# Remove the local temporary plain branch after merged.
 
 import os, sys
 prog_path = os.path.realpath(__file__)
