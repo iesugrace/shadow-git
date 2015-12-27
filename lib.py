@@ -11,6 +11,7 @@ class WrongArgumentException(Exception): pass
 
 empty_object_id = '0' * 40
 shadow_git_dir  = 'shadow'
+cipher_branch_prefix = 'cipher-'
 symkey_tag_prefix = 'symkey-'
 
 def find_git_dir():
@@ -346,6 +347,7 @@ def create_tree(blob_id, file_name, base):
 
     return tree_id
 
+
 def current_branch():
     """ Return current branch's name
     """
@@ -358,6 +360,18 @@ def current_branch():
     else:
         pos = pos.split()[-1]
     return pos
+
+
+def get_all_branches(remote=False):
+    """ Return a list of all branches' name
+    """
+    cmd = 'git branch'
+    if remote:
+        cmd = cmd + ' -r'
+    stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
+    return output
+
 
 def create_commit(tree, parent, message):
     """ Create a commit object with the provided tree, parent, and message.
@@ -520,6 +534,17 @@ def revision_parse(rev):
     if not stat: raise ShellCmdErrorException(cmd)
     id = output[0]
     return id
+
+
+def rev_valid(rev):
+    """ Check if a revision is valid
+    """
+    try:
+        revision_parse(rev)
+    except ShellCmdErrorException:
+        return False
+    else:
+        return True
 
 
 def remove_tag(tag_name):

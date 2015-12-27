@@ -10,3 +10,94 @@ prog_path = os.path.realpath(__file__)
 prog_dir  = os.path.dirname(prog_path)
 sys.path.insert(0, prog_dir)
 import lib
+
+class Clone:
+    def __init__(self, argv):
+        argv = argv[1:]
+        repo = argv.pop(0)
+        dir  = argv[0] if len(argv) else self.determ_dir(repo)
+        self.clone(repo, dir)
+        orig_dir = os.getcwd()
+        os.chdir(dir)
+        self.initialize()
+        self.decrypt_branches()
+        os.chdir(orig_dir)
+
+    def determ_dir(self, repo):
+        """ Return a directory name appropriate for the repo.
+        repo for /path/to/repo.git and foo for host.xz:foo/.git
+        """
+        dir = repo
+        if dir.endswith('.git'):    # remove trailing .git
+            dir = dir[:-4]
+        dir = dir.strip('/')        # remove trailing /
+        dir = os.path.basename(dir) # basename only
+        dir = dir.split(':')[-1]    # part after colon
+        return dir
+
+    def clone(self, repo, dir):
+        cmd = 'git clone -n %s %s' % (repo, dir)
+        if os.system(cmd) != 0:
+            raise lib.ShellCmdErrorException
+
+    def initialize(self):
+        """ Initialize shadow git for the new local repository
+        """
+        print('Initializing shadow git...')
+        cmd = 'git shadow-init'
+        if os.system(cmd) != 0:
+            raise lib.ShellCmdErrorException
+
+    def decrypt_branches(self):
+        """ Decrypt all cipher branches of the repository,
+        update the 'plain_position' and 'cipher_position' of
+        the position record, create local cipher branch for
+        every remote-tracking cipher branch, checkout the
+        master branch if there is one.
+        """
+        print('Decrypting cipher branches...')
+        cb_prefix = lib.cipher_branch_prefix
+        fb_prefix = 'refs/remotes/'
+        brs       = lib.get_all_branches(remote=True)
+        cbrs      = []
+        for branch in brs:
+            branch = branch[2:]
+            parts  = branch.split('/')
+            if parts[0] == 'origin' and parts[-1].startswith(cb_prefix):
+                plain_name = parts[-1][len(cb_prefix):]
+                cbrs.append((fb_prefix + branch, plain_name))
+        if not cbrs:
+            print('No cipher branch found.')
+        for c_branch, p_branch in cbrs:
+            if not p_branch:
+                print('Ignoring %s' % c_branch, file=sys.stderr)
+                continue
+            print('Decrypting %s' % c_branch)
+            tip = lib.decrypt_branch(c_branch)
+            lib.update_branch(p_branch, tip)
+            lib.update_branch(cb_prefix + 'origin-' + p_branch, c_branch)
+            lib.update_position_record('origin', p_branch, tip, c_branch)
+        if lib.rev_valid('master'):
+            os.system('git checkout -q master')
+        print('Decryption done.')
+
+
+def help(ofile=sys.stdout):
+    """ Show help message
+    """
+    msg = 'Usage: %s repository [directory]' % os.path.basename(sys.argv[0])
+    print(msg, file=ofile)
+
+
+if __name__ == '__main__':
+    try:
+        Clone(sys.argv)
+    except IndexError as e:
+        help(sys.stderr)
+        exit(1)
+    except KeyboardInterrupt:
+        exit(1)
+    except:
+        exit(1)
+    else:
+        exit(0)
