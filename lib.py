@@ -371,6 +371,14 @@ def get_all_branches(remote=False):
     return output
 
 
+def branch_exists(name):
+    """ Check if the named branch exists
+    """
+    branches = get_all_branches()
+    names    = [x[2:].split()[0] for x in branches]
+    return name in names
+
+
 def create_commit(tree, parent, message):
     """ Create a commit object with the provided tree, parent, and message.
     If the parent is all zero (40 zeros), we create a commit without a parent.

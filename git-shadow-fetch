@@ -32,7 +32,8 @@ class Fetcher():
         if not stat:
             print('Fetch failed', file=sys.stderr)
             return False
-        if lib.revision_parse(self.lc_c_branch) != lib.revision_parse(self.rt_c_branch):
+        if (not lib.branch_exists(self.lc_c_branch) or
+            lib.revision_parse(self.lc_c_branch) != lib.revision_parse(self.rt_c_branch)):
             lib.update_branch(self.lc_c_branch, self.rt_c_branch)
             tip = lib.decrypt_commit(self.lc_c_branch)
             lib.update_branch(self.plain_branch, tip)
