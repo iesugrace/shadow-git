@@ -458,8 +458,13 @@ def generate_key():
     """ Generate a random key, return a bytes
     """
     size = 128
-    key  = open('/dev/urandom', 'rb').read(size)
-    return key
+    key = b''
+    while True:
+        key += open('/dev/urandom', 'rb').read(size)
+        key = key.replace(b'\n', b'')
+        if len(key) >= size:
+            break
+    return key[:size]
 
 
 def read_pubkeys():
