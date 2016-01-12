@@ -1,6 +1,7 @@
 import os, sys
 import hashlib, zlib
 import time
+import tempfile
 from subprocess import Popen, PIPE, getstatusoutput
 
 class ShellCmdErrorException(Exception): pass
@@ -92,9 +93,9 @@ def get_position_record(remote, branch):
 
 
 def get_status_text_output(cmd):
-    """ Run the cmd, return the stdout as a list of lines
+    """ Run the cmd, return the output as a list of lines
     as well as the stat of the cmd (True or False), content
-    of the stdout will be decoded.
+    of the out will be decoded.
     """
     stat, output = getstatusoutput(cmd)
     if stat == 0:
@@ -243,32 +244,48 @@ def copy_out_objects(commit, topdir=None):
         copy_object(id, file)
 
 
-def tar_to_stdout(path, stdout):
-    """ Tar archive the given path, write to stdout
+def createTmpFile():
+    """ Create an empty temporary file,
+    return the file name.
     """
-    p = Popen(['tar', '-cf', '-', path], stdout=stdout)
-    return p
+    f = tempfile.NamedTemporaryFile(delete=False)
+    return f.name
 
 
-def encrypt_pipe(stdin, stdout, key):
-    """ Encrypt the data from the stdin, write it to stdout.
+def tar(path, ofile=None):
+    """ Tar to archive and compress the given path,
+    write to file 'ofile', raise exception on failure.
+    """
+    if ofile is None:
+        ofile = createTmpFile()
+    cmd = 'tar -cJf %s %s' % (ofile, path)
+    stat, output = get_status_text_output(cmd)
+    assert stat, "tar failed"
+    return ofile
+
+
+def encryptFile(key, ifile, ofile=None):
+    """ Encrypt the ifile, write it to ofile.
     The key shall be a bytes.
     """
-    infd, outfd = os.pipe()
-    p = Popen(['gpg', '-q', '-c', '--passphrase-fd=%s' % infd, '--cipher-algo=aes'],
-                stdin=stdin, stdout=stdout, pass_fds=[infd])
-    f = os.fdopen(outfd, 'wb')
-    f.write(key)
-    f.close()
-    return p
+    if ofile is None:
+        ofile = createTmpFile()
+    p = Popen(['openssl', 'aes-128-cbc', '-salt', '-in', ifile, '-out', ofile, '-pass', 'stdin'],
+                stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p.stdin.write(key)
+    p.communicate()
+    stat = p.wait()
+    assert stat == 0, "encryption failed"
+    return ofile
 
 
-def pipe_to_object(stdin, stdout):
-    """ Read data from stdin and save it to a Git hash-object.
+def fileToObject(ifile):
+    """ Create a Git hash-object from file 'ifile'
     """
-    p = Popen(['git', 'hash-object', '-w', '--stdin'],
-                stdin=stdin, stdout=stdout)
-    return p
+    cmd = 'git hash-object -w %s' % ifile
+    stat, output = get_status_text_output(cmd)
+    assert stat, "git hash-object failed"
+    return output[0]
 
 
 def cleanup(path):
@@ -281,10 +298,11 @@ def encrypt_path(path, key):
     """ Archive the path, encrypt it, and create a new blob for it,
     return the new encrypted blob's ID
     """
-    p1 = tar_to_stdout(path=path, stdout=PIPE)
-    p2 = encrypt_pipe(stdin=p1.stdout, stdout=PIPE, key=key)
-    p3 = pipe_to_object(stdin=p2.stdout, stdout=PIPE)
-    id = p3.communicate()[0].decode().strip()
+    arcFile = tar(path)
+    encFile = encryptFile(key, arcFile)
+    id      = fileToObject(encFile)
+    os.unlink(arcFile)
+    os.unlink(encFile)
     return id
 
 
@@ -616,32 +634,42 @@ def decrypt_key(key_tag):
     return key
 
 
-def object_to_pipe(id, otype):
-    """ Read the Git object and write it to pipe
+def objectToFile(id, otype):
+    """ Read the Git object and write it to a file
     """
-    cmd = ['git', 'cat-file', otype, id]
-    p = Popen(cmd, stdout=PIPE)
-    return p
+    ofile = createTmpFile()
+    file  = open(ofile, 'wb')
+    cmd   = ['git', 'cat-file', otype, id]
+    stat, output = get_status_byte_output(cmd)
+    assert stat, "git cat-file failed"
+    file.write(output)
+    file.close()
+    return ofile
 
 
-def decrypt_pipe(stdin, key):
-    """ Decrypt the data from pipe and write it to pipe
+def decryptFile(ifile, key, ofile=None):
+    """ Decrypt ifile and write it to ofile
     """
-    infd, outfd = os.pipe()
-    cmd = ['gpg', '-q', '-d', '--passphrase-fd=%s' % infd]
-    p = Popen(cmd, stdin=stdin, stdout=PIPE, pass_fds=[infd])
-    f = os.fdopen(outfd, 'wb')
-    f.write(key)
-    f.close()
-    return p
+    if ofile is None:
+        ofile = createTmpFile()
+    p = Popen(['openssl', 'enc', '-d', '-aes-128-cbc',
+                '-in', ifile, '-out', ofile, '-pass', 'stdin'],
+                stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p.stdin.write(key)
+    p.communicate()
+    stat = p.wait()
+    assert stat == 0, "decryption failed"
+    return ofile
 
 
-def untar_from_stdin(stdin, extra_opts=[]):
-    """ Extract data from stdin
+def untar(ifile, extra_opts=[]):
+    """ Extract data from ifile
     """
-    cmd = ['tar', '-xf', '-'] + extra_opts
-    p = Popen(cmd, stdin=stdin, stdout=PIPE)
-    return p
+    cmd = ['tar', '-xJf', ifile] + extra_opts
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    stat = p.wait()
+    assert stat == 0, "untar failed"
 
 
 def extract_from_message(commit, keyword):
@@ -674,18 +702,21 @@ def decrypt_commit(commit, key=None):
     if not key:
         tag = get_commit_symkey_name(commit)
         key = decrypt_key(tag)
-    gitdir     = find_git_dir()
-    object_dir = os.path.join(gitdir, 'objects')
-    blob_id    = get_cipher_blob_id(commit)
-    p1         = object_to_pipe(blob_id, 'blob')
-    p2         = decrypt_pipe(p1.stdout, key)
-    p3         = untar_from_stdin(p2.stdout, ['-C', object_dir, '--strip-components=1'])
-    p3.communicate()
-    stat1      = p1.wait()
-    stat2      = p2.wait()
-    stat3      = p3.wait()
-    if stat1 != 0 or stat2 != 0 or stat3 != 0:
+    gitdir  = find_git_dir()
+    objDir  = os.path.join(gitdir, 'objects')
+    blobId  = get_cipher_blob_id(commit)
+    try:
+        objFile = objectToFile(blobId, 'blob')
+        arcFile = decryptFile(objFile, key)
+        untar(arcFile, ['-C', objDir, '--strip-components=1'])
+    except AssertionError:
+        if os.path.exists(objFile):
+            os.unlink(objFile)
+        if os.path.exists(arcFile):
+            os.unlink(arcFile)
         raise ShellCmdErrorException('error: decrypt commit')
+    os.unlink(objFile)
+    os.unlink(arcFile)
     return get_tip_inside_cipher(commit)
 
 

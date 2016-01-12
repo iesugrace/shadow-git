@@ -46,7 +46,7 @@ class Pusher():
         parent = self.cipher_position
         name   = lib.dense_time_str()
         dname  = name
-        fname  = name + '.tar.gpg'
+        fname  = name + '.tar.ci'
         key    = lib.generate_key()
         for commit in commits:
             lib.copy_out_objects(commit, topdir=dname)
