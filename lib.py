@@ -406,6 +406,8 @@ def create_commit(tree, parent, message):
     shadow_auther, shadow_email = read_shadow_id()
     os.environ.putenv('GIT_AUTHOR_NAME', shadow_auther)
     os.environ.putenv('GIT_AUTHOR_EMAIL', shadow_email)
+    os.environ.putenv('GIT_COMMITTER_NAME', shadow_auther)
+    os.environ.putenv('GIT_COMMITTER_EMAIL', shadow_email)
 
     cmd = ['git', 'commit-tree', tree]
     if parent != empty_object_id:
@@ -511,11 +513,12 @@ def write_pubkeys(keys):
     open(path, 'w').writelines(keys)
 
 
-def push(remote, lc_branch, rmt_branch, tag):
+def push(remote, lc_branch, rmt_branch, tag, force=False):
     """ Push the branch and symkey's tag to the remote using
     git-push. If the branch failed, don't push the tag.
     """
-    cmd  = 'git push %s %s:%s' % (remote, lc_branch, rmt_branch)
+    forceStr = '-f' if force else ""
+    cmd  = 'git push %s %s %s:%s' % (forceStr, remote, lc_branch, rmt_branch)
     stat = os.system(cmd)
     if stat == 0:
         cmd  = 'git push %s %s' % (remote, tag)
