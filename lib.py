@@ -19,17 +19,10 @@ def find_git_dir():
     """ Return the absolute path of the .git directory """
     gitdir = os.getenv('GIT_DIR')
     if not gitdir:
-        HOME=os.getenv('HOME')
-        ROOT='/'
-        cwd = os.getcwd()
-        while True:
-            if '.git' in os.listdir(cwd):   # found
-                gitdir = os.path.join(cwd, '.git')
-                break
-            elif cwd in (HOME, ROOT):   # no more to try
-                break
-            else:                       # go up
-                cwd, junk = os.path.split(cwd)
+        cmd = 'git rev-parse --show-toplevel'
+        stat, text = get_status_text_output(cmd)
+        if stat:
+            gitdir = os.path.join(text[0], '.git')
     if not gitdir:
         raise NotGitRepoException
     return gitdir
