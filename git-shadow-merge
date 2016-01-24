@@ -25,7 +25,6 @@ class Merger():
         self.orig_branch   = parts[-1]
         self.cipher_branch = 'cipher-%s-%s' % (self.remote_name, self.orig_branch)
         self.cur_branch    = lib.current_branch()
-        self.merge()
 
     def merge(self):
         if self.cur_branch != self.orig_branch:
@@ -44,6 +43,7 @@ class Merger():
         print('Position record updated')
         lib.remove_branch(self.remote_branch)
         print('Temporary branch %s removed' % self.remote_branch)
+        return True
 
 
 def help(ofile=sys.stdout):
@@ -63,7 +63,10 @@ if __name__ == '__main__':
 
     branch = sys.argv[1]
     try:
-        Merger(branch)
+        merger = Merger(branch)
+        stat = merger.merge()
+        code = 0 if stat else 1
+        exit(code)
     except KeyboardInterrupt:
         exit(1)
     except Exception as e:
