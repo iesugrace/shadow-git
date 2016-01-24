@@ -71,7 +71,7 @@ class Pusher():
         pushed, remove the tag of the symmetric key, remove all objects
         created thus far.
         """
-        if not self.transformed: return
+        if not self.transformed: return True
         if lib.push(self.remote, self.lc_c_branch,
                 self.rmt_c_branch, self.cipher_key_tag, self.force):
             lib.update_position_record(self.remote, self.branch,
