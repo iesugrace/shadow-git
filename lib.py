@@ -184,21 +184,22 @@ def tree_of_commit(commit):
     return text[0]
 
 
-def files_of_commit(commit):
-    """ Return a list of file path that affected by the given commit
+def parseTree(tree):
+    """ Collect id of all trees and blobs under the tree
     """
-    cmd = 'git log -1 --pretty=format: --name-only %s' % commit
+    cmd = 'git cat-file -p %s' % tree
     stat, text = get_status_text_output(cmd)
-    return text
-
-
-def object_id_of_file(tree, filename):
-    """ Find the object ID of the file in the tree
-    """
-    cmd = "git cat-file -p %s | awk -F'\\t' '$2 == \"%s\"{gsub(\".* \", \"\", $1); print $1}'" % (
-            tree, filename)
-    stat, text = get_status_text_output(cmd)
-    return text[0] if len(text) > 0 else ""
+    trees = []
+    blobs = []
+    if stat:
+        for line in text:
+            parts = line.split()
+            what  = parts[1]
+            if what == 'tree':
+                trees.append(parts[2])
+            elif what == 'blob':
+                blobs.append(parts[2])
+    return (trees, blobs)
 
 
 def collect_object_ids(commit):
@@ -208,17 +209,14 @@ def collect_object_ids(commit):
     ids = set()
     ids.add(commit)                     # add the commit itself
     top_tree = tree_of_commit(commit)
-    affected_files = files_of_commit(commit)
-    for path in affected_files:
-        next  = top_tree
-        names = path.split(os.sep)
-        for name in names:
-            ids.add(next)               # the 'next' is the tree in the path
-            next = object_id_of_file(next, name)
-            if not next: break          # tree will be empty for file deletion
-        if next: ids.add(next)          # this is the blob of the file
-    ids.add(top_tree)                   # empty commit contains no files, so the
-    return ids                          # top_tree not been added yet.
+    trees = [top_tree]
+    while trees:
+        tree = trees.pop()
+        ids.add(tree)       # add the tree
+        subtrees, blobs = parseTree(tree)
+        ids.update(blobs)   # add blobs under the tree
+        trees.extend(subtrees)
+    return ids
 
 
 def object_type(id):
