@@ -32,6 +32,13 @@ if __name__ == '__main__':
     if not lib.is_git():
         print('fatal: Not a git repository', file=sys.stderr)
         exit(1)
+    if '-s' in sys.argv:    # query stat
+        if lib.shadow_initialized():
+            print('initialized')
+            exit(0)
+        else:
+            print('not initialized')
+            exit(1)
     if lib.shadow_initialized():
         print('Already initialized')
         exit(0)
