@@ -85,6 +85,27 @@ def get_position_record(remote, branch):
     return result
 
 
+def get_fetch_stage():
+    """ Find out the start point
+    The file is supposed to contain at most one line.
+    """
+    filename = 'fetch_stage'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    if not os.path.exists(path):
+        res = ''
+    else:
+        res = open(path).readline().strip()
+    return res
+
+
+def update_fetch_stage(stage):
+    filename = 'fetch_stage'
+    gitdir   = find_git_dir()
+    path     = os.path.join(gitdir, shadow_git_dir, filename)
+    open(path, 'w').write('%s\n' % stage)
+
+
 def get_status_text_output(cmd):
     """ Run the cmd, return the output as a list of lines
     as well as the stat of the cmd (True or False), content

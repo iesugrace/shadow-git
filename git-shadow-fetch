@@ -15,6 +15,12 @@ class Fetcher():
     """ Fetch the cipher branch from the remote, merge it into the local
     cipher branch, decrypt it, create a new temporary plain branch for it
     """
+    FETCHDONE    = 1
+    NOCHANGE     = 2
+    FETCHFAILED  = 3
+    STAGEFETCH   = '0'
+    STAGEDECRYPT = '1'
+
     def __init__(self, remote, branch):
         self.remote       = remote
         self.branch       = branch
@@ -22,23 +28,48 @@ class Fetcher():
         self.rt_c_branch  = 'refs/remotes/' + self.remote + '/' + self.rmt_c_branch
         self.lc_c_branch  = 'cipher-%s-%s' % (remote, branch)
         self.plain_branch = 'plain-%s-%s' % (remote, branch)
-        self.fetch()
+        self.work()
+
+    def work(self):
+        """ Carry out actions according to stages
+        Fetch the cipher branch from the remote, update local
+        cipher branch, decrypt local cipher branch, create a
+        new temporary plain branch points to the decrypted tip.
+        """
+        stage = lib.get_fetch_stage()
+        if stage not in ['', Fetcher.STAGEFETCH, Fetcher.STAGEDECRYPT]:
+            print('corrupted stage log, nothing done', file=sys.stderr)
+            return False
+        if not stage or stage == Fetcher.STAGEFETCH:
+            stat = self.fetch()
+            if stat == Fetcher.NOCHANGE:
+                return True
+            elif stat != Fetcher.FETCHDONE:
+                return False
+        self.decrypt()
+        return True
 
     def fetch(self):
-        """ Fetch the cipher branch from the remote, decrypt it,
-        create a new temporary plain branch points to it.
+        """ Fetch the cipher branch from the remote,
+        update the local cipher branch.
         """
         stat = lib.fetch(self.remote, self.rmt_c_branch, self.rt_c_branch)
         if not stat:
             print('Fetch failed', file=sys.stderr)
-            return False
+            return Fetcher.FETCHFAILED
         if (not lib.branch_exists(self.lc_c_branch) or
             lib.revision_parse(self.lc_c_branch) != lib.revision_parse(self.rt_c_branch)):
             lib.update_branch(self.lc_c_branch, self.rt_c_branch)
-            tip = lib.decrypt_commit(self.lc_c_branch)
-            lib.update_branch(self.plain_branch, tip)
+            lib.update_fetch_stage(Fetcher.STAGEDECRYPT)
+            return Fetcher.FETCHDONE
         else:
-            print('No change on the remote, nothing to do.')
+            print('No change on the remote, nothing fetched.')
+            return Fetcher.NOCHANGE
+
+    def decrypt(self):
+        tip = lib.decrypt_commit(self.lc_c_branch)
+        lib.update_branch(self.plain_branch, tip)
+        lib.update_fetch_stage(Fetcher.STAGEFETCH)
 
 
 def help(ofile=sys.stdout):
