@@ -61,8 +61,12 @@ class Clone:
         brs       = lib.get_all_branches(remote=True)
         cbrs      = []
         for branch in brs:
+            # ignore this form: origin/HEAD -> origin/cipher-master
+            if ' -> ' in branch:
+                continue
             branch = branch[2:]
             parts  = branch.split('/')
+            # only decrypt branches of the 'origin'
             if parts[0] == 'origin' and parts[-1].startswith(cb_prefix):
                 plain_name = parts[-1][len(cb_prefix):]
                 cbrs.append((fb_prefix + branch, plain_name))

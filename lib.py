@@ -1032,6 +1032,7 @@ def get_commit_list(rev_range):
     """
     cmd = 'git rev-list %s' % rev_range
     stat, output = get_status_text_output(cmd)
+    if not stat: raise ShellCmdErrorException('error: ' + cmd)
     return output
 
 
