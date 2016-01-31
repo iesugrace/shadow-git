@@ -15,7 +15,7 @@ def help(ofile=sys.stdout):
     """ Show help message
     """
     bname = os.path.basename(sys.argv[0])
-    msg =  'Usage: %s branch' % bname
+    msg =  'Usage: %s <cipher-branch> <plain-branch>' % bname
     print(msg, file=ofile)
 
 
@@ -23,14 +23,14 @@ if __name__ == '__main__':
     if not lib.env_ok():
         exit(1)
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         try:
-            tip = lib.decrypt_branch(sys.argv[1])
-            basename = os.path.basename(sys.argv[1])
-            p_prefix = 'plain-'
-            c_prefix = 'cipher-'
-            p_branch = p_prefix + basename[len(c_prefix):]
-            lib.update_branch(p_branch, tip)
+            c_branch = sys.argv[1]
+            p_branch = sys.argv[2]
+            tip      = lib.decrypt_branch(c_branch)
+            sha1     = lib.revision_parse(c_branch)
+            reason = "move to the tip after decrypted branch %s (%s)" % (c_branch, sha1)
+            lib.update_branch(p_branch, tip, reason)
             print('Update %s to %s.' % (p_branch, tip))
             exit(0)
         except KeyboardInterrupt:
