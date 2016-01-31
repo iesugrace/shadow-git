@@ -78,8 +78,11 @@ class Clone:
                 continue
             print('Decrypting %s' % c_branch)
             tip = lib.decrypt_branch(c_branch)
-            lib.update_branch(p_branch, tip)
-            lib.update_branch(cb_prefix + 'origin-' + p_branch, c_branch)
+            sha1 = lib.revision_parse(c_branch)
+            reason = "move to the tip after decrypted branch %s (%s)" % (c_branch, sha1)
+            lib.update_branch(p_branch, tip, reason)
+            reason = "move to %s (%s)" % (c_branch, sha1)
+            lib.update_branch(cb_prefix + 'origin-' + p_branch, c_branch, reason)
             lib.update_position_record('origin', p_branch, tip, c_branch)
         if lib.rev_valid('master'):
             os.system('git checkout -q master')
