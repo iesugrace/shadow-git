@@ -21,6 +21,8 @@ class Pusher():
     """
 
     def __init__(self, remote, branch, force=False):
+        lc_p_branch          = 'plain-%s-%s' % (remote, branch)
+        self.checkBranch(lc_p_branch)   # may raise an exception
         self.remote          = remote
         self.branch          = branch
         self.force           = force
@@ -32,6 +34,12 @@ class Pusher():
         self.new_objects     = []
         self.transformed     = False
         self.transform()
+
+    def checkBranch(self, branch):
+        """ If the branch exists, raise an exception
+        """
+        msg = "%s exists, push not allowed" % branch
+        assert not lib.branch_exists(branch), msg
 
     def transform(self):
         """ Transform plaintext commits into one ciphertext commit, including
@@ -56,7 +64,8 @@ class Pusher():
         new_commit  = lib.create_commit(tree, parent, message)
         tname       = lib.symkey_tag_prefix + tree
         key_blob    = lib.secure_key(key, tname)
-        lib.update_branch(self.lc_c_branch, new_commit)
+        reason = "prepare for shadow-push"
+        lib.update_branch(self.lc_c_branch, new_commit, reason)
         self.new_objects.extend([new_commit, tree, blob, key_blob])
         self.cipher_key_tag       = tname
         self.transformed          = True
@@ -80,7 +89,8 @@ class Pusher():
             return True
         else:
             print('Push failed, rolling back...', file=sys.stderr)
-            lib.update_branch(self.lc_c_branch, self.cipher_position)
+            reason = "shadow-push failed, roll back"
+            lib.update_branch(self.lc_c_branch, self.cipher_position, reason)
             lib.remove_tag(self.cipher_key_tag)
             lib.prune_objects(self.new_objects)
             return False

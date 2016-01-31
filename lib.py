@@ -436,7 +436,7 @@ def dense_time_str(second=None):
     return time.strftime('%Y%m%d%H%M%S', time.localtime(second))
 
 
-def update_branch(name, commit):
+def update_branch(name, commit, reason=''):
     """ Update the branch to point to the given commit, the
     branch will be automatically created if it does not exist.
     It can also be used to move the branch back in the history,
@@ -446,7 +446,10 @@ def update_branch(name, commit):
     if commit == empty_object_id:
         remove_branch(name)
     else:
-        cmd = 'git update-ref refs/heads/%s %s' % (name, commit)
+        cmd = 'git update-ref'
+        if reason:
+            cmd = '%s -m "%s"' % (cmd, reason)
+        cmd = '%s refs/heads/%s %s' % (cmd, name, commit)
         stat, output = get_status_text_output(cmd)
         if not stat: raise ShellCmdErrorException('error: ' + cmd)
 
