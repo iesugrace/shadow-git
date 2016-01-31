@@ -35,12 +35,23 @@ class Merger():
         if not stat:
             print('Merge failed, solve the problem, and try again', file=sys.stderr)
             return False
+
+        # update the position of the local cipher branch
+        rmt_c_branch = 'cipher-%s' % self.orig_branch
+        rt_c_branch  = 'refs/remotes/' + self.remote_name + '/' + rmt_c_branch
+        sha1 = lib.revision_parse(rt_c_branch)
+        reason = "move to %s (%s)" % (rt_c_branch, sha1)
+        lib.update_branch(self.cipher_branch, rt_c_branch, reason)
+        print('Local cipher branch updated')
+
+        # update the location record
         pos = lib.get_position_record(self.remote_name, self.orig_branch)
         plain_pos = lib.calc_plain_position(cur_branch_old_pos,
                         self.remote_branch, self.cur_branch, pos[0])
         lib.update_position_record(self.remote_name, self.orig_branch,
                         plain_pos, self.cipher_branch)
         print('Position record updated')
+
         lib.remove_branch(self.remote_branch)
         print('Temporary branch %s removed' % self.remote_branch)
         return True
