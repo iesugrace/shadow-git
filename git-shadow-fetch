@@ -66,9 +66,9 @@ class Fetcher():
             return Fetcher.NOCHANGE
 
     def decrypt(self):
-        tip = lib.decrypt_commit(self.lc_c_branch)
-        sha1 = lib.revision_parse(self.lc_c_branch)
-        reason = "move to the tip after decrypted branch %s (%s)" % (self.lc_c_branch, sha1)
+        tip = lib.decrypt_commit(self.rt_c_branch)
+        sha1 = lib.revision_parse(self.rt_c_branch)
+        reason = "move to the tip after decrypted branch %s (%s)" % (self.rt_c_branch, sha1)
         lib.update_branch(self.plain_branch, tip, reason)
         lib.update_fetch_stage(Fetcher.STAGEFETCH)
 
