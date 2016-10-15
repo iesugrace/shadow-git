@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# Author:       Long Zhu <iprintf@qq.com>
+# Date:         2016-10-15
+# Location:     ShenZhen 811
+# Desc:         实现shadow-pull命令
+#
+
+
+function myexit()
+{
+    echo $1
+    exit $2
+}
+
+function getbranch()
+{
+    branch=$(git branch | grep -E " *plain" | sed -r 's/ //g')
+    line=$(wc -l <<< "$branch")
+    # echo "#$branch#"
+
+    test $line -ne 1 && myexit "plain分支有问题!", 1
+    echo $branch
+}
+
+function getrepo()
+{
+    # test -z "$1" && echo "origin" || echo $1
+    echo ${1:-origin}
+}
+
+remote=$(getrepo $1)
+# echo $remote
+fetch_branch=${2:-master}
+git shadow-fetch $remote $fetch_branch
+branch=$(getbranch)
+git shadow-merge $branch
+
