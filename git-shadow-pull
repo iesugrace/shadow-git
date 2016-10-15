@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Author:       Long Zhu <iprintf@qq.com>
+# Date:         2016-10-15
+# Location:     ShenZhen 811
+# Desc:         实现shadow-pull命令
+#
+
+myexit() {
+    echo $1
+    exit $2
+}
+
+getbranch() {
+    branch=$(git branch | grep -E " *plain" | sed -r 's/ //g')
+    line=$(wc -l <<< "$branch")
+    test $line -ne 1 && myexit "expect one plain branch.", 1
+    echo $branch
+}
+
+getrepo() {
+    echo ${1:-origin}
+}
+
+remote=$(getrepo $1)
+fetch_branch=${2:-master}
+git shadow-fetch $remote $fetch_branch
+branch=$(getbranch)
+git shadow-merge $branch
