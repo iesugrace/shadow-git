@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# Author:       Long Zhu <iprintf@qq.com>
+# Date:         2016-10-16 02:09
+# Location:     ShenZhen Home
+# Desc:         实现git-shadow-remove命令
+#
+
+get_remote_branch() {
+    for r in $(git remote)
+    do
+        rb=$(echo $(git branch | grep "cipher-$r" 2> /dev/null))
+        if test ! -z "$rb" ; then
+            echo "$r $rb"
+            return
+        fi
+    done
+}
+
+delete_remote_branch() {
+    remote_branch=$(get_remote_branch)
+    test -z "$remote_branch" && return
+    remote=${remote_branch%% *}
+    branch=${remote_branch#* }
+    url=$(git remote get-url $remote)
+    test -z "$url" && return
+    git remote remove $remote
+    git remote add $remote $url
+    git branch -D $branch
+}
+
+delete_cipher_branch() {
+    branch=$(echo $(git branch | grep "cipher"))
+    test -z "$branch" && return
+    git branch -D $branch
+}
+
+delete_config_dir() {
+    config_dir=.git/shadow
+    test -e $config_dir && rm $config_dir -rf &> /dev/null
+}
+
+delete_remote_branch
+delete_cipher_branch
+delete_config_dir
